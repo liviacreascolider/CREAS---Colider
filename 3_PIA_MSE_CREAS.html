@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CREAS — PIA / MSE</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; font-size: 16px; }
+
+.header {
+  background: linear-gradient(135deg, #4A235A, #7D3C98);
+  color: white; padding: 20px; text-align: center;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.header h1 { font-size: 1.2rem; font-weight: 700; }
+.header p  { font-size: 0.82rem; opacity: 0.85; margin-top: 3px; }
+.header small { font-size: 0.73rem; opacity: 0.7; }
+
+.progress-bar { background: #E8DAEF; height: 5px; position: sticky; top: 72px; z-index: 99; }
+.progress-fill { height: 100%; background: #7D3C98; width: 0%; transition: width 0.4s; }
+.progress-label { text-align: center; font-size: 0.75rem; color: #7D3C98; padding: 3px 0; font-weight: 600; }
+
+.container { max-width: 780px; margin: 0 auto; padding: 16px 14px 60px; }
+.steps { display: flex; gap: 5px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+.step-dot { width: 9px; height: 9px; border-radius: 50%; background: #cdd8e3; transition: all 0.3s; cursor: pointer; }
+.step-dot.active { background: #4A235A; transform: scale(1.35); }
+.step-dot.done { background: #7D3C98; }
+
+.section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.section-header { background: #4A235A; color: white; padding: 13px 18px; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.section-body { padding: 18px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.85rem; font-weight: 600; color: #4A235A; margin-bottom: 5px; }
+.req { color: #c0392b; }
+
+input[type=text], input[type=date], input[type=tel], input[type=number], select, textarea {
+  width: 100%; padding: 11px 13px; border: 1.5px solid #cdd8e3;
+  border-radius: 8px; font-size: 0.92rem; font-family: inherit;
+  background: #fafcfe; color: #1a1a1a;
+  transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: #7D3C98;
+  box-shadow: 0 0 0 3px rgba(125,60,152,0.1); background: white;
+}
+textarea { resize: vertical; min-height: 80px; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+.row .field { flex: 1; min-width: 180px; }
+.row .field.w2 { flex: 2; }
+
+.check-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.check-item { display: flex; align-items: center; gap: 7px; background: #f5f0f8; border: 1.5px solid #D2B4DE; border-radius: 8px; padding: 9px 13px; cursor: pointer; font-size: 0.85rem; user-select: none; transition: all 0.2s; }
+.check-item:hover { border-color: #7D3C98; background: #EAD9F7; }
+.check-item input { display: none; }
+.check-box { width: 18px; height: 18px; border: 2px solid #A569BD; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; color: white; transition: all 0.2s; }
+.check-item.checked { border-color: #4A235A; background: #E8DAEF; }
+.check-item.checked .check-box { background: #7D3C98; border-color: #7D3C98; }
+
+.radio-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.radio-item { display: flex; align-items: center; gap: 7px; background: #f5f0f8; border: 1.5px solid #D2B4DE; border-radius: 8px; padding: 9px 13px; cursor: pointer; font-size: 0.85rem; user-select: none; transition: all 0.2s; }
+.radio-item:hover { border-color: #7D3C98; background: #EAD9F7; }
+.radio-item input { display: none; }
+.opt-box { width: 18px; height: 18px; border: 2px solid #A569BD; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.radio-item.selected { border-color: #4A235A; background: #E8DAEF; }
+.radio-item.selected .opt-box { background: #7D3C98; border-color: #7D3C98; }
+
+.member-hdr { display: grid; grid-template-columns: 2.5fr 1.5fr 0.8fr 1.5fr 1.5fr; gap: 6px; margin-bottom: 4px; }
+.member-hdr span { font-size: 0.72rem; font-weight: 700; color: #4A235A; text-transform: uppercase; }
+.member-row { display: grid; grid-template-columns: 2.5fr 1.5fr 0.8fr 1.5fr 1.5fr; gap: 6px; margin-bottom: 6px; }
+.member-row input { font-size: 0.83rem; padding: 8px 10px; }
+
+.sub-hdr { background: #E8DAEF; color: #4A235A; font-weight: 700; font-size: 0.88rem; padding: 9px 13px; border-radius: 6px; margin-bottom: 14px; margin-top: 8px; }
+.divider { border: none; border-top: 1.5px solid #edf1f5; margin: 18px 0; }
+
+.processo-box { background: #f8f0ff; border: 2px dashed #7D3C98; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.processo-box label { color: #4A235A; font-weight: 700; font-size: 0.88rem; display: block; margin-bottom: 8px; }
+
+.nav { display: flex; gap: 10px; margin-top: 20px; }
+.btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.btn:active { transform: scale(0.98); }
+.btn-prev { background: #e8eef4; color: #4A235A; }
+.btn-prev:hover { background: #E8DAEF; }
+.btn-next { background: #7D3C98; color: white; }
+.btn-next:hover { background: #4A235A; }
+.btn-submit { background: #1e5c2e; color: white; }
+.btn-submit:hover { background: #155124; }
+.btn-add { background: #F5EEF8; border: 1.5px dashed #7D3C98; color: #4A235A; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; font-family: inherit; }
+
+.sending-overlay { display: none; position: fixed; inset: 0; background: rgba(74,35,90,0.88); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.sending-overlay.show { display: flex; }
+.sending-overlay .spin { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sending-overlay p { color: white; font-size: 1.1rem; font-weight: 600; }
+
+.success { display: none; text-align: center; padding: 50px 20px; background: white; border-radius: 12px; }
+.success .big-icon { font-size: 3.5rem; margin-bottom: 14px; }
+.success h2 { color: #4A235A; font-size: 1.4rem; margin-bottom: 8px; }
+.success p { color: #555; margin-bottom: 22px; font-size: 0.9rem; }
+.btn-print { background: #7D3C98; color: white; padding: 14px 30px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin: 6px; }
+.btn-novo { background: #e8eef4; color: #4A235A; padding: 14px 30px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin: 6px; }
+
+.resumo-bloco { background: #f7fafc; border: 1.5px solid #dde4eb; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.8; }
+.resumo-titulo { color: #4A235A; font-weight: 700; font-size: 0.88rem; margin-bottom: 5px; }
+
+@media (max-width: 480px) {
+  .row .field { min-width: 100%; }
+  .member-hdr, .member-row { grid-template-columns: 2fr 1fr 0.7fr; }
+  .member-hdr span:nth-child(n+4), .member-row input:nth-child(n+4) { display: none; }
+}
+@media print {
+  .header, .progress-bar, .progress-label, .steps, .nav, .btn-print, .btn-novo { display: none !important; }
+  .section { display: block !important; box-shadow: none; page-break-inside: avoid; }
+  body { background: white; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sending-overlay" id="sendingOverlay">
+  <div class="spin"></div>
+  <p>Enviando para o Google Sheets...</p>
+</div>
+
+<div class="header">
+  <h1>📋 PIA — Plano Individual de Atendimento</h1>
+  <p>Medidas Socioeducativas em Meio Aberto — LA e PSC</p>
+  <small>Conforme Lei do SINASE Nº 12.594/2012 e SUAS — CREAS Colíder/MT</small>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-label" id="progressLabel">Seção 1 de 8</div>
+
+<div class="container">
+  <div class="steps" id="stepDots"></div>
+
+  <!-- 1. IDENTIFICAÇÃO -->
+  <div class="section active" id="sec1">
+    <div class="section-header">👤 1. Identificação do Adolescente</div>
+    <div class="section-body">
+      <div class="processo-box">
+        <label>📎 Processo / Documento de Referência</label>
+        <div class="row">
+          <div class="field w2">
+            <input type="text" id="numProcesso" placeholder="Nº do processo, guia judicial...">
+          </div>
+          <div class="field">
+            <input type="text" id="origemProcesso" placeholder="Vara, CT, MPMT...">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <input type="text" id="localArquivo" placeholder="Onde está salvo: pasta, drive, sistema...">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data do PIA <span class="req">*</span></label>
+          <input type="date" id="dataPia">
+        </div>
+        <div class="field">
+          <label>Nº da Família / Prontuário</label>
+          <input type="text" id="numFamilia" placeholder="Ex: 034/2025">
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome Completo <span class="req">*</span></label>
+        <input type="text" id="nomeAdol" placeholder="Nome completo do adolescente">
+      </div>
+      <div class="field">
+        <label>Apelido / Nome Social</label>
+        <input type="text" id="apelido" placeholder="">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data de Nascimento <span class="req">*</span></label>
+          <input type="date" id="nascAdol">
+        </div>
+        <div class="field">
+          <label>Idade</label>
+          <input type="number" id="idadeAdol" placeholder="anos" min="12" max="21">
+        </div>
+        <div class="field">
+          <label>Sexo</label>
+          <select id="sexo">
+            <option value="">Selecione...</option>
+            <option>Masculino</option>
+            <option>Feminino</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CPF</label>
+          <input type="text" id="cpfAdol" placeholder="000.000.000-00">
+        </div>
+        <div class="field">
+          <label>RG</label>
+          <input type="text" id="rgAdol">
+        </div>
+        <div class="field">
+          <label>NIS</label>
+          <input type="text" id="nisAdol">
+        </div>
+      </div>
+      <div class="field">
+        <label>Endereço</label>
+        <input type="text" id="endAdol" placeholder="Rua, número, bairro">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Telefone</label>
+          <input type="tel" id="telAdol" placeholder="(66) 99999-0000">
+        </div>
+        <div class="field">
+          <label>WhatsApp</label>
+          <input type="tel" id="whatsAdol" placeholder="(66) 99999-0000">
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav"><div></div><button class="btn btn-next" onclick="goTo(2)">Próximo →</button></div>
+    </div>
+  </div>
+
+  <!-- 2. MEDIDA -->
+  <div class="section" id="sec2">
+    <div class="section-header">⚖️ 2. Dados da Medida Socioeducativa</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Tipo de Medida <span class="req">*</span></label>
+        <div class="radio-group" id="tipoMedida">
+          <label class="radio-item"><input type="radio" name="medida" value="LA"><span class="opt-box">●</span>LA — Liberdade Assistida</label>
+          <label class="radio-item"><input type="radio" name="medida" value="PSC"><span class="opt-box">●</span>PSC — Prestação de Serviço à Comunidade</label>
+          <label class="radio-item"><input type="radio" name="medida" value="LA + PSC"><span class="opt-box">●</span>LA + PSC</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Vara / Comarca</label>
+        <select id="vara">
+          <option value="">Selecione...</option>
+          <option>2ª Vara — Colíder/MT</option>
+          <option>3ª Vara — Colíder/MT</option>
+          <option>MPMT</option>
+          <option>Outra</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data da Sentença</label>
+          <input type="date" id="dataSentenca">
+        </div>
+        <div class="field">
+          <label>Data de Início da Medida</label>
+          <input type="date" id="dataInicio">
+        </div>
+        <div class="field">
+          <label>Prazo da Medida</label>
+          <input type="text" id="prazoMedida" placeholder="Ex: 6 meses">
+        </div>
+      </div>
+      <div class="field">
+        <label>Ato Infracional <span class="req">*</span></label>
+        <textarea id="atoInfracional" rows="3" placeholder="Descreva o ato infracional de forma sucinta..."></textarea>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(1)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(3)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. RESPONSÁVEL + FAMÍLIA -->
+  <div class="section" id="sec3">
+    <div class="section-header">👨‍👩‍👧 3. Responsável Legal e Composição Familiar</div>
+    <div class="section-body">
+      <div class="sub-hdr">Responsável Legal</div>
+      <div class="field">
+        <label>Nome Completo <span class="req">*</span></label>
+        <input type="text" id="nomeResp" placeholder="Nome completo">
+      </div>
+      <div class="field">
+        <label>Grau de Parentesco</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="parent" value="Mãe"><span class="opt-box">●</span>Mãe</label>
+          <label class="radio-item"><input type="radio" name="parent" value="Pai"><span class="opt-box">●</span>Pai</label>
+          <label class="radio-item"><input type="radio" name="parent" value="Avó/Avô"><span class="opt-box">●</span>Avó/Avô</label>
+          <label class="radio-item"><input type="radio" name="parent" value="Outro"><span class="opt-box">●</span>Outro</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CPF</label>
+          <input type="text" id="cpfResp" placeholder="000.000.000-00">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="tel" id="telResp" placeholder="(66) 99999-0000">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Escolaridade</label>
+          <select id="escResp">
+            <option value="">Selecione...</option>
+            <option>Sem escolaridade</option>
+            <option>Fundamental incompleto</option>
+            <option>Fundamental completo</option>
+            <option>Médio incompleto</option>
+            <option>Médio completo</option>
+            <option>Superior</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Situação de Trabalho</label>
+          <select id="trabResp">
+            <option value="">Selecione...</option>
+            <option>Formal (CLT)</option>
+            <option>Informal / autônomo</option>
+            <option>Desempregada(o)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Benefícios Sociais</label>
+        <div class="check-group" id="beneficios">
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Bolsa Família</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>BPC</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Outro</label>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Composição Familiar</div>
+      <div class="member-hdr">
+        <span>Nome</span><span>Parentesco</span><span>Idade</span><span>Escolaridade</span><span>Ocupação</span>
+      </div>
+      <div id="membrosContainer">
+        <div class="member-row"><input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade"><input type="text" placeholder="Ocupação"></div>
+        <div class="member-row"><input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade"><input type="text" placeholder="Ocupação"></div>
+        <div class="member-row"><input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade"><input type="text" placeholder="Ocupação"></div>
+      </div>
+      <button class="btn-add" onclick="addMembro()">+ Adicionar membro</button>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(2)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(4)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ESCOLAR E SAÚDE -->
+  <div class="section" id="sec4">
+    <div class="section-header">📚 4. Situação Escolar e de Saúde</div>
+    <div class="section-body">
+      <div class="sub-hdr">Situação Escolar</div>
+      <div class="field">
+        <label>Está matriculado?</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="matric" value="Sim"><span class="opt-box">●</span>Sim</label>
+          <label class="radio-item"><input type="radio" name="matric" value="Não"><span class="opt-box">●</span>Não</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field w2">
+          <label>Escola</label>
+          <input type="text" id="escola" placeholder="Nome da escola">
+        </div>
+        <div class="field">
+          <label>Série / Turno</label>
+          <input type="text" id="serie" placeholder="Ex: 9º ano — Manhã">
+        </div>
+      </div>
+      <div class="field">
+        <label>Frequência</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="freq" value="Regular"><span class="opt-box">●</span>Regular</label>
+          <label class="radio-item"><input type="radio" name="freq" value="Irregular"><span class="opt-box">●</span>Irregular</label>
+          <label class="radio-item"><input type="radio" name="freq" value="Evasão"><span class="opt-box">●</span>Evasão</label>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Situação de Saúde</div>
+      <div class="field">
+        <label>Acompanhamento de saúde?</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="saude" value="Sim"><span class="opt-box">●</span>Sim</label>
+          <label class="radio-item"><input type="radio" name="saude" value="Não"><span class="opt-box">●</span>Não</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>UBS / Serviço de Referência</label>
+        <input type="text" id="ubs" placeholder="Nome da UBS ou serviço">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Medicação contínua?</label>
+          <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="med" value="Sim"><span class="opt-box">●</span>Sim</label>
+            <label class="radio-item"><input type="radio" name="med" value="Não"><span class="opt-box">●</span>Não</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>CAPS?</label>
+          <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="caps" value="Sim"><span class="opt-box">●</span>Sim</label>
+            <label class="radio-item"><input type="radio" name="caps" value="Não"><span class="opt-box">●</span>Não</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Uso de drogas?</label>
+          <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="drog" value="Sim"><span class="opt-box">●</span>Sim</label>
+            <label class="radio-item"><input type="radio" name="drog" value="Não"><span class="opt-box">●</span>Não</label>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observações de Saúde</label>
+        <textarea id="obsSaude" rows="3" placeholder="Observações relevantes..."></textarea>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(3)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(5)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. OBJETIVOS E COMPROMISSOS -->
+  <div class="section" id="sec5">
+    <div class="section-header">🎯 5. Objetivos e Compromissos do PIA</div>
+    <div class="section-body">
+      <div class="sub-hdr">Objetivos (acordados com o adolescente e responsável)</div>
+      <div class="check-group" id="objetivos">
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Fortalecer vínculos familiares</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Garantir permanência/retorno à escola</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Desenvolver responsabilidade e autonomia</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Inserção em atividades comunitárias (PSC)</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Prevenção à reincidência</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Qualificação profissional</label>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Outros objetivos</label>
+        <input type="text" id="outrosObj" placeholder="">
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Compromissos do Adolescente</div>
+      <div class="check-group" id="comprAdol">
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Comparecer aos atendimentos no CREAS</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Cumprir carga horária da PSC</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Manter frequência escolar</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Respeitar normas do serviço executante</label>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Outros compromissos do adolescente</label>
+        <input type="text" id="outrosComprAdol" placeholder="">
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Compromissos dos Responsáveis</div>
+      <div class="check-group" id="comprResp">
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Acompanhar o adolescente nos atendimentos</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Incentivar cumprimento da medida</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Comunicar mudanças de endereço/telefone</label>
+        <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Participar de orientações familiares</label>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(4)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(6)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. EXECUÇÃO DA MSE -->
+  <div class="section" id="sec6">
+    <div class="section-header">📍 6. Local e Execução da Medida</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Local do cumprimento da MSE</label>
+        <input type="text" id="localMSE" placeholder="Nome da instituição ou unidade...">
+      </div>
+      <div class="field">
+        <label>Endereço do local</label>
+        <input type="text" id="endMSE" placeholder="Rua, número, bairro...">
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Para PSC (quando aplicável)</div>
+      <div class="field">
+        <label>Local da PSC</label>
+        <input type="text" id="localPSC" placeholder="Nome do local...">
+      </div>
+      <div class="field">
+        <label>Atividade desenvolvida</label>
+        <textarea id="atividadePSC" rows="2" placeholder="Descreva a atividade..."></textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Horas/semana</label>
+          <input type="number" id="horasSemanal" placeholder="Ex: 4" min="1">
+        </div>
+        <div class="field">
+          <label>Horas/mês</label>
+          <input type="number" id="horasMensal" placeholder="Ex: 16" min="1">
+        </div>
+        <div class="field">
+          <label>Total judicial (horas)</label>
+          <input type="number" id="horasTotal" placeholder="Ex: 120" min="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Dias e horários</label>
+        <input type="text" id="diasHorarios" placeholder="Ex: Segundas e quartas, 14h às 16h">
+      </div>
+      <div class="field">
+        <label>Supervisor responsável</label>
+        <input type="text" id="supervisor" placeholder="Nome do supervisor">
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Técnicos de Referência — CREAS</div>
+      <div class="row">
+        <div class="field w2">
+          <label>Técnico(a) 1</label>
+          <input type="text" id="tec1Nome" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Cargo</label>
+          <input type="text" id="tec1Cargo" placeholder="Ex: Assistente Social">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field w2">
+          <label>Técnico(a) 2</label>
+          <input type="text" id="tec2Nome" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Cargo</label>
+          <input type="text" id="tec2Cargo" placeholder="Ex: Psicóloga">
+        </div>
+      </div>
+      <div class="field">
+        <label>Data de início do PIA</label>
+        <input type="date" id="dataInicioPIA">
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(5)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(7)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. ACOMPANHAMENTO E AVALIAÇÃO -->
+  <div class="section" id="sec7">
+    <div class="section-header">📊 7. Acompanhamento e Avaliação Final</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Frequência do acompanhamento</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="freqac" value="Semanal"><span class="opt-box">●</span>Semanal</label>
+          <label class="radio-item"><input type="radio" name="freqac" value="Quinzenal"><span class="opt-box">●</span>Quinzenal</label>
+          <label class="radio-item"><input type="radio" name="freqac" value="Mensal"><span class="opt-box">●</span>Mensal</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Registro dos atendimentos realizados</label>
+        <textarea id="regAtend" rows="4" placeholder="Descreva os atendimentos individuais, familiares, visitas institucionais e contatos intersetoriais..."></textarea>
+      </div>
+      <hr class="divider">
+      <div class="sub-hdr">Avaliação Final</div>
+      <div class="field">
+        <label>Cumprimento da medida</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="cumpr" value="Integral"><span class="opt-box">●</span>Integral</label>
+          <label class="radio-item"><input type="radio" name="cumpr" value="Parcial"><span class="opt-box">●</span>Parcial</label>
+          <label class="radio-item"><input type="radio" name="cumpr" value="Não cumprida"><span class="opt-box">●</span>Não cumprida</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Evolução do adolescente</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="evol" value="Satisfatória"><span class="opt-box">●</span>Satisfatória</label>
+          <label class="radio-item"><input type="radio" name="evol" value="Parcial"><span class="opt-box">●</span>Parcial</label>
+          <label class="radio-item"><input type="radio" name="evol" value="Insuficiente"><span class="opt-box">●</span>Insuficiente</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Houve reincidência?</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="reinc" value="Sim"><span class="opt-box">●</span>Sim</label>
+          <label class="radio-item"><input type="radio" name="reinc" value="Não"><span class="opt-box">●</span>Não</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Avaliação técnica final</label>
+        <textarea id="avalTecnica" rows="4" placeholder="Descreva a avaliação técnica final..."></textarea>
+      </div>
+      <div class="field">
+        <label>Data de encerramento da MSE</label>
+        <input type="date" id="dataEncerramento">
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(6)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(8)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. REVISÃO E FINALIZAÇÃO -->
+  <div class="section" id="sec8">
+    <div class="section-header">✅ 8. Revisão e Finalização</div>
+    <div class="section-body">
+      <div id="resumo"></div>
+      <hr class="divider" style="margin:16px 0">
+      <div class="field">
+        <label>Assinatura digital — Técnico(a) <span class="req">*</span></label>
+        <input type="text" id="assinatura" placeholder="Digite seu nome completo">
+      </div>
+      <div class="field">
+        <label>CRESS / Registro profissional</label>
+        <input type="text" id="cress" placeholder="Ex: CRESS 23/MT — 00000">
+      </div>
+      <div style="background:#fff8e1;border:1.5px solid #ffc107;border-radius:8px;padding:14px;margin-top:16px;">
+        <p style="font-size:0.82rem;font-weight:700;color:#856404;margin-bottom:8px;">⚙️ Configuração Google Sheets</p>
+        <div class="field" style="margin-bottom:0">
+          <label style="color:#856404;font-size:0.82rem;">URL do Google Apps Script:</label>
+          <input type="text" id="scriptUrl" placeholder="Cole aqui a URL do seu Apps Script..." style="border-color:#ffc107;" value="https://script.google.com/macros/s/AKfycbx8LNFTuIXVV7QUFQUySJjfKxsspIIdL-FvldRg2XQJRTCZ7CaY9-CZYTqFfoYoTRnm/exec">
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(7)">← Anterior</button>
+        <button class="btn btn-submit" onclick="submitForm()">✅ Finalizar e Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="success" id="successMsg">
+    <div class="big-icon">🎉</div>
+    <h2>PIA Registrado!</h2>
+    <p id="successText">Plano Individual de Atendimento registrado com sucesso.</p>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button class="btn-novo" onclick="location.reload()">📋 Novo PIA</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 8;
+let current = 1;
+
+const dotsEl = document.getElementById('stepDots');
+for (let i = 1; i <= TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'step-dot' + (i === 1 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  document.getElementById('sec' + current).classList.remove('active');
+  current = n;
+  const s = document.getElementById('sec' + n);
+  if (s) { s.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  updateProgress();
+  if (n === 8) buildResumo();
+}
+
+function updateProgress() {
+  document.getElementById('progressFill').style.width = ((current-1)/(TOTAL-1)*100) + '%';
+  document.getElementById('progressLabel').textContent = 'Seção ' + current + ' de ' + TOTAL;
+  document.querySelectorAll('.step-dot').forEach((d,i) => {
+    d.classList.remove('active','done');
+    if (i+1 === current) d.classList.add('active');
+    else if (i+1 < current) d.classList.add('done');
+  });
+}
+
+document.querySelectorAll('.radio-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const rb = this.querySelector('input[type=radio]');
+    document.querySelectorAll(`input[name="${rb.name}"]`).forEach(r => r.closest('.radio-item').classList.remove('selected'));
+    rb.checked = true; this.classList.add('selected');
+  });
+});
+
+document.querySelectorAll('.check-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const cb = this.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked; this.classList.toggle('checked', cb.checked);
+  });
+});
+
+function addMembro() {
+  const c = document.getElementById('membrosContainer');
+  const r = document.createElement('div'); r.className = 'member-row';
+  r.innerHTML = '<input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade"><input type="text" placeholder="Ocupação">';
+  c.appendChild(r);
+}
+
+const v = (id) => { const e = document.getElementById(id); return e ? (e.value || '—') : '—'; };
+const radio = (name) => { const e = document.querySelector(`input[name="${name}"]:checked`); return e ? e.value : '—'; };
+const checks = (gid) => { const items = document.querySelectorAll('#'+gid+' .check-item.checked'); return items.length ? Array.from(items).map(i=>i.textContent.trim()).join(', ') : '—'; };
+
+function buildResumo() {
+  document.getElementById('resumo').innerHTML = `
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">👤 Adolescente</div>
+      Nome: <b>${v('nomeAdol')}</b> | Nasc.: <b>${v('nascAdol')}</b><br>
+      Processo: <b>${v('numProcesso')}</b> | Nº Família: <b>${v('numFamilia')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">⚖️ Medida</div>
+      Tipo: <b>${radio('medida')}</b> | Vara: <b>${v('vara')}</b><br>
+      Início: <b>${v('dataInicio')}</b> | Prazo: <b>${v('prazoMedida')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">🎯 Objetivos</div>
+      ${checks('objetivos')}
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📍 Execução</div>
+      Local: <b>${v('localMSE')}</b> | Total judicial: <b>${v('horasTotal')} horas</b><br>
+      Técnico(a) 1: <b>${v('tec1Nome')}</b> | Técnico(a) 2: <b>${v('tec2Nome')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📊 Avaliação Final</div>
+      Cumprimento: <b>${radio('cumpr')}</b> | Evolução: <b>${radio('evol')}</b> | Reincidência: <b>${radio('reinc')}</b>
+    </div>`;
+}
+
+async function submitForm() {
+  if (!document.getElementById('assinatura').value.trim()) {
+    alert('Por favor, assine com seu nome para finalizar.'); return;
+  }
+  const scriptUrl = document.getElementById('scriptUrl').value.trim();
+  const dados = {
+    formulario: 'PIA',
+    dataPia: v('dataPia'), numFamilia: v('numFamilia'),
+    numProcesso: v('numProcesso'), origemProcesso: v('origemProcesso'), localArquivo: v('localArquivo'),
+    nomeAdol: v('nomeAdol'), nascAdol: v('nascAdol'), idadeAdol: v('idadeAdol'),
+    sexo: v('sexo'), cpfAdol: v('cpfAdol'), rgAdol: v('rgAdol'), nisAdol: v('nisAdol'),
+    endAdol: v('endAdol'), telAdol: v('telAdol'), whatsAdol: v('whatsAdol'),
+    tipoMedida: radio('medida'), vara: v('vara'), dataSentenca: v('dataSentenca'),
+    dataInicio: v('dataInicio'), prazoMedida: v('prazoMedida'), atoInfracional: v('atoInfracional'),
+    nomeResp: v('nomeResp'), parentesco: radio('parent'), cpfResp: v('cpfResp'), telResp: v('telResp'),
+    escola: v('escola'), serie: v('serie'), frequencia: radio('freq'),
+    saude: radio('saude'), ubs: v('ubs'), drogas: radio('drog'),
+    objetivos: checks('objetivos'), outrosObj: v('outrosObj'),
+    localMSE: v('localMSE'), localPSC: v('localPSC'),
+    horasSemanal: v('horasSemanal'), horasMensal: v('horasMensal'), horasTotal: v('horasTotal'),
+    diasHorarios: v('diasHorarios'), supervisor: v('supervisor'),
+    tec1Nome: v('tec1Nome'), tec1Cargo: v('tec1Cargo'),
+    tec2Nome: v('tec2Nome'), tec2Cargo: v('tec2Cargo'),
+    dataInicioPIA: v('dataInicioPIA'),
+    cumprimento: radio('cumpr'), evolucao: radio('evol'), reincidencia: radio('reinc'),
+    avalTecnica: v('avalTecnica'), dataEncerramento: v('dataEncerramento'),
+    assinatura: v('assinatura'), cress: v('cress'),
+    dataEnvio: new Date().toLocaleString('pt-BR'),
+  };
+
+  if (scriptUrl) {
+    document.getElementById('sendingOverlay').classList.add('show');
+    try {
+      await fetch(scriptUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dados) });
+      document.getElementById('successText').textContent = 'PIA enviado para o Google Sheets com sucesso!';
+    } catch(e) {
+      document.getElementById('successText').textContent = 'PIA registrado. Verifique a URL do Apps Script.';
+    }
+    document.getElementById('sendingOverlay').classList.remove('show');
+  }
+
+  for (let i = 1; i <= TOTAL; i++) { const s = document.getElementById('sec'+i); if(s) s.style.display='none'; }
+  document.getElementById('successMsg').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CREAS — Registro de Acompanhamento</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; font-size: 16px; }
+
+  .header {
+    background: linear-gradient(135deg, #1e5c2e, #2e8b57);
+    color: white; padding: 24px 20px 20px;
+    text-align: center; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header h1 { font-size: 1.3rem; font-weight: 700; }
+  .header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+  .progress-bar { background: #c8e6c9; height: 6px; position: sticky; top: 72px; z-index: 99; }
+  .progress-fill { height: 100%; background: #2e8b57; width: 0%; transition: width 0.4s ease; border-radius: 0 3px 3px 0; }
+  .progress-label { text-align: center; font-size: 0.78rem; color: #2e8b57; padding: 4px 0 0; font-weight: 600; }
+
+  .container { max-width: 780px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .section { background: white; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .section-header { background: #1e5c2e; color: white; padding: 14px 20px; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .section-body { padding: 20px; }
+
+  /* CARD FAMÍLIA */
+  .familia-card {
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border: 2px solid #2e8b57;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .familia-card.visible { display: block; animation: fadeIn 0.3s ease; }
+  .familia-card h3 { color: #1e5c2e; font-size: 1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .familia-card .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem; }
+  .familia-card .info-item { display: flex; flex-direction: column; gap: 2px; }
+  .familia-card .info-item span:first-child { font-size: 0.75rem; color: #555; font-weight: 600; text-transform: uppercase; }
+  .familia-card .info-item span:last-child { color: #1e5c2e; font-weight: 700; }
+  .familia-card .atend-count { background: #2e8b57; color: white; border-radius: 20px; padding: 4px 14px; font-size: 0.82rem; font-weight: 700; display: inline-block; margin-top: 10px; }
+
+  /* SEARCH */
+  .search-box { position: relative; }
+  .search-box input { padding-right: 50px; }
+  .search-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: #2e8b57; color: white; border: none;
+    border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 0.9rem;
+  }
+  .search-btn:active { background: #1e5c2e; }
+
+  /* FIELD */
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-size: 0.88rem; font-weight: 600; color: #1e5c2e; margin-bottom: 6px; }
+  .field label .req { color: #c0392b; margin-left: 2px; }
+
+  input[type=text], input[type=date], input[type=tel], select, textarea {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #cdd8e3;
+    border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+    color: #1a1a1a; background: #fafcfe; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #2e8b57;
+    box-shadow: 0 0 0 3px rgba(46,139,87,0.12); background: white;
+  }
+  textarea { resize: vertical; min-height: 90px; }
+
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row .field { flex: 1; min-width: 200px; }
+  .row .field.w2 { flex: 2; }
+
+  /* CHECKBOX */
+  .check-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .check-item {
+    display: flex; align-items: center; gap: 8px;
+    background: #f0f4f8; border: 1.5px solid #cdd8e3;
+    border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    transition: all 0.2s; font-size: 0.88rem; user-select: none;
+  }
+  .check-item:hover { border-color: #2e8b57; background: #e8f5e9; }
+  .check-item input { display: none; }
+  .check-item .box { width: 20px; height: 20px; border: 2px solid #aab8c8; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 13px; color: white; }
+  .check-item.checked { border-color: #1e5c2e; background: #c8e6c9; }
+  .check-item.checked .box { background: #1e5c2e; border-color: #1e5c2e; }
+
+  /* SCALE */
+  .scale-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .scale-table th { background: #1e5c2e; color: white; padding: 10px 8px; font-size: 0.8rem; text-align: center; border: 1px solid #155a27; }
+  .scale-table th:first-child { text-align: left; }
+  .scale-table td { padding: 10px 8px; border: 1px solid #cdd8e3; font-size: 0.83rem; vertical-align: middle; }
+  .scale-table tr:nth-child(even) td { background: #f7fafc; }
+  .scale-table td:first-child { font-weight: 500; color: #1e5c2e; }
+  .scale-options { display: flex; flex-direction: column; gap: 4px; }
+  .scale-opt { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; padding: 3px 6px; border-radius: 4px; transition: background 0.15s; }
+  .scale-opt:hover { background: #e8f5e9; }
+  .scale-opt input[type=radio] { accent-color: #1e5c2e; width: 15px; height: 15px; }
+  .frag { color: #c0392b; } .desenv { color: #d68910; } .fort { color: #1e8449; }
+
+  /* CUMPRIMENTO */
+  .cumpr-item {
+    border: 1.5px solid #cdd8e3; border-radius: 8px;
+    padding: 14px; margin-bottom: 10px; background: #fafcfe;
+  }
+  .cumpr-item .cumpr-label { font-size: 0.88rem; font-weight: 600; color: #1e5c2e; margin-bottom: 10px; }
+  .cumpr-options { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cumpr-opt {
+    flex: 1; min-width: 100px; padding: 10px; border-radius: 8px;
+    border: 1.5px solid #cdd8e3; text-align: center; cursor: pointer;
+    font-size: 0.82rem; font-weight: 600; transition: all 0.2s;
+  }
+  .cumpr-opt:hover { border-color: #2e8b57; }
+  .cumpr-opt input { display: none; }
+  .cumpr-opt.sim { border-color: #1e8449; background: #e8f5e9; color: #1e8449; }
+  .cumpr-opt.parcial { border-color: #d68910; background: #fef9e7; color: #d68910; }
+  .cumpr-opt.nao { border-color: #c0392b; background: #fdf2f2; color: #c0392b; }
+
+  /* ENCAM */
+  .encam-entry { border: 1.5px solid #cdd8e3; border-radius: 8px; padding: 14px; margin-bottom: 12px; background: #fafcfe; }
+  .encam-num { font-size: 0.78rem; font-weight: 700; color: #2e8b57; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .divider { border: none; border-top: 1.5px solid #e8eef4; margin: 20px 0; }
+  .sub-header { background: #e8f5e9; color: #1e5c2e; font-weight: 700; font-size: 0.9rem; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; }
+
+  /* ALERTA */
+  .alerta {
+    background: #fff3cd; border: 1.5px solid #ffc107;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+    font-size: 0.85rem; color: #856404;
+  }
+
+  /* NAV */
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; }
+  .btn { padding: 14px 28px; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; flex: 1; }
+  .btn-prev { background: #e8eef4; color: #1e5c2e; }
+  .btn-prev:hover { background: #c8e6c9; }
+  .btn-next { background: #1e5c2e; color: white; }
+  .btn-next:hover { background: #155a27; }
+  .btn-submit { background: #c0392b; color: white; }
+  .btn-submit:hover { background: #a93226; }
+  .btn:active { transform: scale(0.98); }
+
+  /* STEPS */
+  .steps { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #cdd8e3; transition: all 0.3s; cursor: pointer; }
+  .step-dot.active { background: #1e5c2e; transform: scale(1.3); }
+  .step-dot.done { background: #2e8b57; }
+
+  /* RESUMO */
+  .resumo-bloco { background: #f7fafc; border: 1.5px solid #cdd8e3; border-radius: 8px; padding: 16px; margin-bottom: 16px; font-size: 0.88rem; line-height: 1.8; }
+  .resumo-titulo { color: #1e5c2e; font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+
+  /* SUCCESS */
+  .success { display: none; text-align: center; padding: 50px 20px; background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .success .icon-big { font-size: 4rem; margin-bottom: 16px; }
+  .success h2 { color: #1e8449; font-size: 1.5rem; margin-bottom: 10px; }
+  .success p { color: #555; margin-bottom: 24px; }
+  .btn-print { background: #1e5c2e; color: white; padding: 14px 32px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  /* ATEND NUMERO BADGE */
+  .badge-atend {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #1e5c2e; color: white;
+    border-radius: 20px; padding: 6px 16px;
+    font-size: 0.88rem; font-weight: 700; margin-bottom: 16px;
+  }
+
+  @media (max-width: 500px) {
+    .row .field { min-width: 100%; }
+    .familia-card .info-grid { grid-template-columns: 1fr; }
+  }
+  @media print {
+    .header, .progress-bar, .progress-label, .steps, .nav, .btn-print { display: none !important; }
+    .section { display: block !important; box-shadow: none; margin-bottom: 10px; }
+    body { background: white; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔄 CREAS — Registro de Acompanhamento</h1>
+  <p>Município de Colíder — MT</p>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-label" id="progressLabel">Seção 1 de 7</div>
+
+<div class="container">
+  <div class="steps" id="stepDots"></div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 1 — IDENTIFICAÇÃO               -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section active" id="sec1">
+    <div class="section-header"><span>🔍</span> 1. Identificação do Caso</div>
+    <div class="section-body">
+
+      <div class="field">
+        <label>Nº da Família / Prontuário <span class="req">*</span></label>
+        <div class="search-box">
+          <input type="text" id="numFamilia" placeholder="Digite o número da família e clique em buscar..." oninput="limparCard()">
+          <button class="search-btn" onclick="buscarFamilia()">🔍</button>
+        </div>
+      </div>
+
+      <!-- Card da família encontrada -->
+      <div class="familia-card" id="familiaCard">
+        <h3>✅ Família encontrada</h3>
+        <div class="info-grid">
+          <div class="info-item"><span>Responsável</span><span id="cardNome">—</span></div>
+          <div class="info-item"><span>Nº Processo</span><span id="cardProcesso">—</span></div>
+          <div class="info-item"><span>Serviço</span><span id="cardServico">—</span></div>
+          <div class="info-item"><span>Técnico(a)</span><span id="cardTecnico">—</span></div>
+          <div class="info-item"><span>Endereço</span><span id="cardEndereco">—</span></div>
+          <div class="info-item"><span>Telefone</span><span id="cardTelefone">—</span></div>
+        </div>
+        <span class="atend-count" id="cardAtend">📋 Acompanhamento nº —</span>
+      </div>
+
+      <div class="alerta" id="alertaNaoEncontrado" style="display:none;">
+        ⚠️ Família não encontrada. Verifique o número ou preencha manualmente abaixo.
+      </div>
+
+      <hr class="divider">
+
+      <div class="row">
+        <div class="field w2">
+          <label>Nome do Responsável / Usuário <span class="req">*</span></label>
+          <input type="text" id="nomeResp" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Nº Processo</label>
+          <input type="text" id="processo" placeholder="Ex: 1000123-45.2026...">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Serviço</label>
+          <select id="servico">
+            <option value="">Selecione...</option>
+            <option>PAEFI</option>
+            <option>MSE — PSC</option>
+            <option>MSE — LA</option>
+            <option>Mulher Vítima de Violência</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Técnico(a) Responsável <span class="req">*</span></label>
+          <input type="text" id="tecnico" placeholder="Nome do(a) técnico(a)">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data do Atendimento <span class="req">*</span></label>
+          <input type="date" id="dataAtend">
+        </div>
+        <div class="field">
+          <label>Tipo de Atendimento</label>
+          <select id="tipoAtend">
+            <option value="">Selecione...</option>
+            <option>Visita domiciliar</option>
+            <option>Atendimento no equipamento</option>
+            <option>Atendimento externo</option>
+            <option>Contato telefônico</option>
+            <option>Demanda Única</option>
+            <option>Benefício Eventual — Passagem</option>
+            <option>Benefício Eventual — Marmita</option>
+            <option>Benefício Eventual — Hospedagem</option>
+            <option>Benefício Eventual — Gás</option>
+            <option>Benefício Eventual — Despesas</option>
+            <option>Audiência</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nº do Acompanhamento (ex: 2º, 3º visita...)</label>
+        <input type="text" id="numAtend" placeholder="Ex: 2ª visita domiciliar">
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav"><div></div><button class="btn btn-next" onclick="goTo(2)">Próximo →</button></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 2 — PRESENÇA                    -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec2">
+    <div class="section-header"><span>✅</span> 2. Presença e Situação Encontrada</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Quem estava presente?</label>
+        <div class="check-group" id="presencaGroup">
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Responsável familiar</label>
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Criança(s)</label>
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Adolescente(s)</label>
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Cônjuge / companheiro(a)</label>
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Outros familiares</label>
+          <label class="check-item"><input type="checkbox"><span class="box">✓</span> Ninguém — residência vazia</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Especifique quem estava presente</label>
+        <input type="text" id="presencaDetalhe" placeholder="Ex: Maria (mãe), João (filho, 8 anos)">
+      </div>
+      <div class="field">
+        <label>Receptividade da família</label>
+        <select id="receptividade">
+          <option value="">Selecione...</option>
+          <option>Muito receptiva</option>
+          <option>Receptiva</option>
+          <option>Pouco receptiva</option>
+          <option>Não receptiva — recusou o atendimento</option>
+          <option>Não estava presente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Situação encontrada neste atendimento <span class="req">*</span></label>
+        <textarea id="situacaoEncontrada" rows="4" placeholder="Descreva o que foi observado: condições da moradia, comportamento dos membros, contexto atual..."></textarea>
+      </div>
+      <div class="field">
+        <label>Houve alguma situação de risco ou urgência?</label>
+        <select id="risco">
+          <option value="">Selecione...</option>
+          <option>Não — situação estável</option>
+          <option>Sim — risco leve, monitorando</option>
+          <option>Sim — risco moderado, intervenção necessária</option>
+          <option>Sim — risco grave, ação imediata necessária</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Descreva a situação de risco (se houver)</label>
+        <textarea id="descRisco" rows="3" placeholder="Descreva detalhes da situação de risco identificada..."></textarea>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(1)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(3)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 3 — CUMPRIMENTO DO PLANO        -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec3">
+    <div class="section-header"><span>📋</span> 3. Cumprimento do Plano Anterior</div>
+    <div class="section-body">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:16px;">Avalie se as ações combinadas no atendimento anterior foram cumpridas.</p>
+
+      <div id="cumprContainer">
+        <div class="cumpr-item">
+          <div class="cumpr-label">1. Ação / compromisso combinado</div>
+          <input type="text" placeholder="Descreva a ação que foi combinada..." style="margin-bottom:10px;">
+          <div class="cumpr-options">
+            <label class="cumpr-opt" onclick="selectCumpr(this,'sim')"><input type="radio" name="cumpr1">✅ Cumprido</label>
+            <label class="cumpr-opt" onclick="selectCumpr(this,'parcial')"><input type="radio" name="cumpr1">⚠️ Parcialmente</label>
+            <label class="cumpr-opt" onclick="selectCumpr(this,'nao')"><input type="radio" name="cumpr1">❌ Não cumprido</label>
+          </div>
+          <input type="text" placeholder="Observação sobre o cumprimento...">
+        </div>
+        <div class="cumpr-item">
+          <div class="cumpr-label">2. Ação / compromisso combinado</div>
+          <input type="text" placeholder="Descreva a ação que foi combinada..." style="margin-bottom:10px;">
+          <div class="cumpr-options">
+            <label class="cumpr-opt" onclick="selectCumpr(this,'sim')"><input type="radio" name="cumpr2">✅ Cumprido</label>
+            <label class="cumpr-opt" onclick="selectCumpr(this,'parcial')"><input type="radio" name="cumpr2">⚠️ Parcialmente</label>
+            <label class="cumpr-opt" onclick="selectCumpr(this,'nao')"><input type="radio" name="cumpr2">❌ Não cumprido</label>
+          </div>
+          <input type="text" placeholder="Observação sobre o cumprimento...">
+        </div>
+      </div>
+      <button onclick="addCumpr()" style="background:#e8f5e9;border:1.5px dashed #2e8b57;color:#1e5c2e;padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;margin-top:4px;">+ Adicionar ação</button>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(2)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(4)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 4 — EVOLUÇÃO DOS PARÂMETROS     -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec4">
+    <div class="section-header"><span>📈</span> 4. Evolução dos Parâmetros</div>
+    <div class="section-body">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:16px;">Avalie a situação atual de cada parâmetro neste acompanhamento.</p>
+
+      <div class="sub-header">4.1 Vínculos e Dinâmica Familiar</div>
+      <div style="overflow-x:auto;">
+      <table class="scale-table">
+        <tr><th>Parâmetro</th><th>Avaliação Atual</th><th>Comparado ao anterior</th></tr>
+        <tr><td>Vínculos afetivos entre os membros</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p1"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p1"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p1"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Comunicação familiar</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p2"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p2"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p2"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Exercício da parentalidade</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p3"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p3"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p3"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Rede de apoio familiar e comunitária</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p4"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p4"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p4"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+      </table></div>
+
+      <hr class="divider">
+      <div class="sub-header">4.2 Proteção e Segurança</div>
+      <div style="overflow-x:auto;">
+      <table class="scale-table">
+        <tr><th>Parâmetro</th><th>Avaliação Atual</th><th>Comparado ao anterior</th></tr>
+        <tr><td>Cessação / redução da violência</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p5"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p5"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p5"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Segurança física dos membros</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p6"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p6"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p6"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Capacidade de proteção do responsável</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p7"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p7"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p7"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+      </table></div>
+
+      <hr class="divider">
+      <div class="sub-header">4.3 Acesso a Direitos e Saúde</div>
+      <div style="overflow-x:auto;">
+      <table class="scale-table">
+        <tr><th>Parâmetro</th><th>Avaliação Atual</th><th>Comparado ao anterior</th></tr>
+        <tr><td>Acesso a benefícios socioassistenciais</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p8"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p8"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p8"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Frequência escolar das crianças/adolescentes</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p9"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p9"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p9"><span class="fort">● Fortalecido</span></label>
+            <label class="scale-opt"><input type="radio" name="p9"><span style="color:#888">● Não se aplica</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option><option>N/A</option></select></td>
+        </tr>
+        <tr><td>Saúde física e mental da família</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p10"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p10"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p10"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Inserção na rede socioassistencial</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p11"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p11"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p11"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+        <tr><td>Autonomia e protagonismo familiar</td>
+          <td><div class="scale-options">
+            <label class="scale-opt"><input type="radio" name="p12"><span class="frag">● Fragilizado</span></label>
+            <label class="scale-opt"><input type="radio" name="p12"><span class="desenv">● Em desenvolvimento</span></label>
+            <label class="scale-opt"><input type="radio" name="p12"><span class="fort">● Fortalecido</span></label>
+          </div></td>
+          <td><select style="font-size:0.8rem;padding:8px;"><option>Selecione...</option><option>⬆️ Melhorou</option><option>➡️ Estável</option><option>⬇️ Piorou</option></select></td>
+        </tr>
+      </table></div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(3)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(5)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 5 — ENCAMINHAMENTOS             -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec5">
+    <div class="section-header"><span>🔗</span> 5. Encaminhamentos Realizados</div>
+    <div class="section-body">
+      <div id="encamContainer">
+        <div class="encam-entry">
+          <div class="encam-num">Encaminhamento 1</div>
+          <div class="row">
+            <div class="field w2"><label>Serviço / Equipamento</label><input type="text" placeholder="Ex: UBS, CAPS, CRAS, Escola..."></div>
+            <div class="field"><label>Data</label><input type="date"></div>
+          </div>
+          <div class="field"><label>Objetivo</label><input type="text" placeholder="Objetivo do encaminhamento..."></div>
+          <div class="field"><label>Resultado / Retorno</label><input type="text" placeholder="Resultado obtido..."></div>
+        </div>
+      </div>
+      <button onclick="addEncam()" style="background:#e8f5e9;border:1.5px dashed #2e8b57;color:#1e5c2e;padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;">+ Adicionar encaminhamento</button>
+      <hr class="divider">
+      <div class="field">
+        <label>Houve acionamento de outros órgãos? (CT, MP, Delegacia...)</label>
+        <textarea id="acionamento" rows="3" placeholder="Descreva se houve acionamento de Conselho Tutelar, MP, Delegacia, Vara..."></textarea>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(4)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(6)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 6 — PRÓXIMOS PASSOS             -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec6">
+    <div class="section-header"><span>🎯</span> 6. Síntese e Próximos Passos</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Síntese do acompanhamento <span class="req">*</span></label>
+        <textarea id="sintese" rows="5" placeholder="Descreva os principais pontos observados, avanços, dificuldades e o estado geral da família neste atendimento..."></textarea>
+      </div>
+      <div class="field">
+        <label>Ações combinadas com a família para o próximo período</label>
+        <textarea id="acoesCombinadas" rows="4" placeholder="Liste as ações que a família se comprometeu a realizar até o próximo atendimento..."></textarea>
+      </div>
+      <div class="field">
+        <label>Ações a serem realizadas pela equipe técnica</label>
+        <textarea id="acoesEquipe" rows="3" placeholder="Documentos, relatórios, contatos, articulações de rede..."></textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data do próximo retorno</label>
+          <input type="date" id="dataRetorno">
+        </div>
+        <div class="field">
+          <label>Tipo de retorno previsto</label>
+          <select id="tipoRetorno">
+            <option value="">Selecione...</option>
+            <option>Visita domiciliar</option>
+            <option>Atendimento no equipamento</option>
+            <option>Contato telefônico</option>
+            <option>Aguardar retorno da família</option>
+            <option>Audiência</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Parecer técnico atual <span class="req">*</span></label>
+        <select id="parecer">
+          <option value="">Selecione...</option>
+          <option>Manter acompanhamento — situação estável</option>
+          <option>Intensificar acompanhamento — situação de risco</option>
+          <option>Encaminhar para desligamento — objetivos alcançados</option>
+          <option>Encaminhar para outro serviço</option>
+          <option>Aguardar retorno para avaliação</option>
+        </select>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(5)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(7)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SEÇÃO 7 — REVISÃO E ENVIO             -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec7">
+    <div class="section-header"><span>✅</span> 7. Revisão e Finalização</div>
+    <div class="section-body">
+      <p style="color:#555;font-size:0.9rem;margin-bottom:20px;">Revise as informações antes de finalizar.</p>
+      <div id="resumo"></div>
+      <hr class="divider">
+      <div class="field">
+        <label>Assinatura digital — Nome do(a) Técnico(a) <span class="req">*</span></label>
+        <input type="text" id="assinatura" placeholder="Digite seu nome completo para confirmar">
+      </div>
+      <div class="field">
+        <label>CRESS / Registro profissional</label>
+        <input type="text" id="cress" placeholder="Ex: CRESS 23/MT — 00000">
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(6)">← Anterior</button>
+        <button class="btn btn-submit" onclick="submitForm()">✅ Finalizar Registro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success" id="successMsg">
+    <div class="icon-big">🎉</div>
+    <h2>Acompanhamento Registrado!</h2>
+    <p>O registro foi finalizado com sucesso.<br>Você pode imprimir ou salvar como PDF.</p>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 7;
+let current = 1;
+
+// Step dots
+const dotsContainer = document.getElementById('stepDots');
+for (let i = 1; i <= TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'step-dot' + (i === 1 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsContainer.appendChild(d);
+}
+
+function goTo(n) {
+  document.getElementById('sec' + current).classList.remove('active');
+  current = n;
+  const sec = document.getElementById('sec' + n);
+  if (sec) { sec.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  updateProgress();
+  if (n === 7) buildResumo();
+}
+
+function updateProgress() {
+  const pct = ((current - 1) / (TOTAL - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = 'Seção ' + current + ' de ' + TOTAL;
+  const dots = document.querySelectorAll('.step-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 === current) d.classList.add('active');
+    else if (i + 1 < current) d.classList.add('done');
+  });
+}
+
+// Banco de famílias (simulado — substitua pelos dados reais)
+// Banco de famílias — atualizado em abril/2026
+const familias = {
+  "2015/06": { nome: "ANILDO ROBERTO", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2016/01": { nome: "VANIA FREITAS CUSTODIO", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "ANA GABRIELI CUSTODIO FREITAS, HENRIQUE GABRIEL, PEDRO HENRIQUE, WEVILYN NICOLLY, ALINE", atendimentos: 1 },
+  "2016/08": { nome: "LUCIA HENRIQUE DUARTE", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "CLEIDE CRISTINA HENRIQUE DE AQUINO", atendimentos: 1 },
+  "2017/01": { nome: "MOISES HENRIQUE DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2018/05": { nome: "ANA LUIZA FERNANDES", servico: "PAEFI", situacao: "ACOMPHEHAMENTO GRUPO PAEF ADOLESCENTE", membros: "", atendimentos: 1 },
+  "2018/14": { nome: "IRACEMA GOULART", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ IDOSA", membros: "", atendimentos: 1 },
+  "2018/17": { nome: "ILDA MARIA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "2019/14": { nome: "REINALDO LACERDA TAVARES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "DHIENIFER VITORIA BATISTA TAVARES, STHEFANY RAFAELY BATISTA TAVARES, JOSÉ GUSTAVO BATISTA TAVARES", atendimentos: 1 },
+  "2020/34": { nome: "CLÉRIO RODRIGUES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2022/04": { nome: "CAMILLY VITORIA BALBINO SOARES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "SUELY GARCIA BALBINO( MÃE)", atendimentos: 1 },
+  "2022/02": { nome: "BRUNO DO CARMO SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO /ESPORADICO", membros: "JOÃO LOPES DA SILVA(PAI)", atendimentos: 1 },
+  "2022/16": { nome: "ANTHONNY MIGUEL DE OLOVEIRA SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ DOMICILIO", membros: "ELIANE RODRIGUES DE SOUZA(AVÓ)", atendimentos: 1 },
+  "2022/38": { nome: "JUVENIL DE OLIVEIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "ISMAEL SEBASTIÃO SOUZA DE OLIVEIRA", atendimentos: 1 },
+  "2022/43": { nome: "EZEQUIEL GALDINO DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2022/47": { nome: "JOÃO GABRIEL LOPES DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO /ESPORADICO", membros: "ROSILENE RODRIGUES LOPES(MÃE)", atendimentos: 1 },
+  "2022/54": { nome: "WELISON SERRA DE SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO /ESPORADICO", membros: "", atendimentos: 1 },
+  "2022/55": { nome: "VICTOR GABRIEL RODRIGUES NUNES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "FABIANA RODRIGUES(MÃE)", atendimentos: 1 },
+  "2023/20": { nome: "YURI GABRIEL ALVES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "ANA CLAUDIA GOMES AMORIM(MÃE), ITALO RUAN P. AMORIM", atendimentos: 1 },
+  "2023/56": { nome: "LUIZ CARLOS ANCIUTTI", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "2023/26": { nome: "ROSILDA PRAXADES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF DE PAIS E RESPONSAVEIS", membros: "ISABELE PRAXADES DA SILVA", atendimentos: 1 },
+  "2023/69": { nome: "JOÃO SEBASTIÃO FIRMINO DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "2024/88": { nome: "SUSY RAFAELA VILELA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "2024/89": { nome: "MATHEUS HENRIQUE FREITAS CUSTÓDIO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "2024/90": { nome: "VITÓRIA DOS ANJOS AQUINO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "2024/99": { nome: "MAYCON CESAR DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2024/116": { nome: "VINICIOS PIRES DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "WILIAN ALMEIDA PIRES  CANDIDO ( Mâe)", atendimentos: 1 },
+  "2024/131": { nome: "JAMILY OLIVEIRA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "PATRICIA (MÃE)", atendimentos: 1 },
+  "2024/151": { nome: "EMILLY ARAUJO DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "", atendimentos: 1 },
+  "2024/152": { nome: "SAMYRA NEVES FONSECA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "", atendimentos: 1 },
+  "2024/161": { nome: "VITÓRIA BORGES CARDOSO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "JOÃO MESSIAS BORGE CARDOSO, ILDA SALETE PINTO(AVÓ)", atendimentos: 1 },
+  "2024/164": { nome: "LUCAS DAVI FREITAS DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "ANA QUELI DE FREITAS CUSTODIO(MÃE)", atendimentos: 1 },
+  "2024/166": { nome: "LUAN BASTOS DE ALMEIDA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "KAUÃN BASTOS DE ALMEIDA, EVILIN DE PAULA BASTOS (MÃE)", atendimentos: 1 },
+  "2024/167": { nome: "FRANCISCA NAIANA DE LIMA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "FRANCISCA NAIANE DE LIMA, NATALINA LIMA NASCIMENTO", atendimentos: 1 },
+  "2024/190": { nome: "MARIA MENDES DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ DOMICILIO", membros: "", atendimentos: 1 },
+  "2024/193": { nome: "IZABEL VITÓRIA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "APARECIDA (AVÓ)", atendimentos: 1 },
+  "2024/217": { nome: "ANA ELIZE DE OLIVEIRA FERREIRA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "2024/224": { nome: "WESLLEY GABRIEL ARAUJO SOARES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "2024/229": { nome: "NATANAEL HENRIQUE SOARES DA SILVA", servico: "PAEFI", situacao: "CASA LAR", membros: "", atendimentos: 1 },
+  "2024/245": { nome: "LEILA DA SILVA JUSTINO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF DE PAIS E RESPONSAVEIS", membros: "AMABILLY YASMIM SILVA ROCHA", atendimentos: 1 },
+  "2024/250": { nome: "ALICE EMANUELI MARTINS TOLEDO", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ DOMICILIO", membros: "", atendimentos: 1 },
+  "2024/254": { nome: "EDUARDA DOS ANJOS MATHEUS", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "ERISVANE (MÃE)", atendimentos: 1 },
+  "2024/267": { nome: "JOÃO HIGINO", servico: "PAEFI", situacao: "ACOMPANHAMENTP GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "2024/273": { nome: "DAVI KASSIANO SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS/DOMICILIO", membros: "KATIANE SOUZA DE LIMA", atendimentos: 1 },
+  "2024/289": { nome: "MARCIA XAVIER GONÇALVES", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ DOMICILIO", membros: "", atendimentos: 1 },
+  "2024/295": { nome: "MARIA HELOISA MAGIOLO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "2024/298": { nome: "FABIANA CORREIA DE LIMA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "YASMIM CORREIA SANTOS", atendimentos: 1 },
+  "2024/325": { nome: "MARIA LUCIA MENDES DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO/ DOMICILIO", membros: "", atendimentos: 1 },
+  "2024/299": { nome: "ALLIFER AUGUSTO BORGES GALVÃO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "ANNA LUIZA BORGES, SIMONE BORGES DE OLIVEIRA(MÃE)", atendimentos: 1 },
+  "2024/301": { nome: "OLIMPIA IZABEL GUALBERTO(MÃE MOISES)", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2024/330": { nome: "RAQUEL BRITO DA SILVA MEDEIROS", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "MARIA GABRIELA LORETTI MEDEIROS", atendimentos: 1 },
+  "2024/331": { nome: "ANGELA FREITAS PEREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "GAEL, FRANCIEL, ALINE", atendimentos: 1 },
+  "2024/348": { nome: "VALQUIRIA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF DE PAIS E RESPONSAVEIS", membros: "INGRID SILVA ARCANJO, IZABELA DA SILVA ARCANJO SANTOS, ALEXANDRI DA SILVA ARCANJO DOS SANTOS, MARIA VITORIA DA SILVA ARCANJO DOS SANTOS, JOÃO MIGUEL DA SILVA ARCANJO DOS SANTOS", atendimentos: 1 },
+  "2024/360": { nome: "CRISTIANE EDITE BARRETOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "CAMMILLY BARRETO PEREIRA, CECÍLIA BARRETO PERERIRA", atendimentos: 1 },
+  "2024/351": { nome: "KAIQUE MEDEIROS LAZZAR", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "CLAIR LAZZAR", atendimentos: 1 },
+  "2024/361": { nome: "CARLOS NAVA LUIZ", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "2024/363": { nome: "BRUNA DIONISIO MOREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2024/364": { nome: "VANESSA GOMES BIFE", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "2024/365": { nome: "LUANA DA SILVA FIGUEIREDO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI ADOLESCENTE", membros: "DAYANE DA SILVA OLIVEIRA", atendimentos: 1 },
+  "2024/366": { nome: "ENZO GABRIEL SILVA FERREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "2024/369": { nome: "LAUANY FERNANDES DE LIMA OLIVEIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "ELIZABETE GONZAGA", atendimentos: 1 },
+  "370/2024": { nome: "THAIS BARBOSA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "MARA BARBOSA DA SILVA ( MÃE)", atendimentos: 1 },
+  "374/2024": { nome: "EVELLYN PINHEIRO", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "MURIEL WELAINY PINHEIRO", atendimentos: 1 },
+  "377/2024": { nome: "FERNANDA EUZIRA SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "JOÃO BATISTA NUNES LACERDA ( PAI)", atendimentos: 1 },
+  "378/2024": { nome: "KEROLY TELIZANY PEREIRA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "YURI MIGUEL DA SILVA  CARVALHO, MARIA ALICE, CHISTOPHER DAVID ISRAEL MATIAS DA SILVA", atendimentos: 1 },
+  "380/2024": { nome: "VICTORYA VALLENTINA ARAÚJO VIZENTIN", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "VICTTOR GUILERME ARAUJO VIZENTIN, ALEX SANDER DE SOUZA  VIZENTIN, NADA VIEIRA ( MÃE)", atendimentos: 1 },
+  "382/2024": { nome: "NATIELY VITÓRIA VENANCIO DE SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "VANILZA VENÂNCIO DE SOUZA", atendimentos: 1 },
+  "385/2024": { nome: "JOSÉ PIETRO REBOUÇAS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "LAIANA REBOUCAS RAMIRO ( MÃE)", atendimentos: 1 },
+  "386/2024": { nome: "MAURALICE PEREIRA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "EVA MARIA PEREIRA", atendimentos: 1 },
+  "389/2024": { nome: "ROSANE APARECIDA MOURA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "390/2024": { nome: "RAQUEL BRITO DA SILVA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "392/2024": { nome: "CICERO ALVES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "393/2024": { nome: "LIVIA MARIA SILVEIRA DIAS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "001/2025": { nome: "ERICKY ADALTO SIMÃO", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "ANDERSON SIMÃO ( PAI)", atendimentos: 1 },
+  "002/2025": { nome: "GABRIEL PRAXADES DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "MÃE VALDINEIA APARECIDA PERES, PAI ADRIANO PRAXADES DA SILVA", atendimentos: 1 },
+  "003/2025": { nome: "JOSEFA TAVARES DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "004/2025": { nome: "NICOLLY RAPHAELLY SOUZA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "", atendimentos: 1 },
+  "005/2025": { nome: "NAYARA GOMES PEREIRA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "JULIA RAFAELA GOMES DA CRUZ, NAYARA GOMES  ( MÃE )", atendimentos: 1 },
+  "006/2025": { nome: "VICTOR GABRIEL DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "ANDREIA DOS SANTOS RODRIGUES", atendimentos: 1 },
+  "007/2025": { nome: "YASMIM GABRIELA DE SOUZA FERREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "MÃE VANESSA DE SOUZA FERREIRA", atendimentos: 1 },
+  "008/2025": { nome: "EMANUELLY LIMA FERREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "EDIMAR LIMA JOSÉ LIMA FERREIRA", atendimentos: 1 },
+  "011/2025": { nome: "WENDER KAYKY DE LIMA CARVALHO DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "( MÃE) SUELI VALE DE LIMA", atendimentos: 1 },
+  "012/2025": { nome: "SANDY DOS SANTOS GONÇALVES", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "013/2025": { nome: "TATIANE APARECIDA SIMIONE", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "014/2025": { nome: "ANDREIA DOS SANTOS RODRIGUES", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "015/2025": { nome: "THAISA APARECIDA PEREIRA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "016/2025": { nome: "VICTOR LOPES DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "ARIADINE LOPES DE SOUZA DOS SANTOS", atendimentos: 1 },
+  "017/2025": { nome: "STEFANY PIRES EGINO", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "018/2025": { nome: "LEONEL ALEXANDER DIAZ PENA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "ALEXANDRA DEL VALLE PENA DUQUE", atendimentos: 1 },
+  "019/2025": { nome: "VITÓRIA PRATES DE LUCAS", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "VILMA APARECIDA PRATES", atendimentos: 1 },
+  "020/2025": { nome: "ELDA PEREIRA DE SOUZA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "021/2025": { nome: "GABRIELY CARLOS GUBANI", servico: "PAEFI", situacao: "ACOMPANHAMENTO  GRUPO ADOLESCENTE", membros: "", atendimentos: 1 },
+  "022/2025": { nome: "MAVI GABRIELLY COSTA SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "GIZELE COSTA DOS SANTOS, REBECA COSTA CAMARGO", atendimentos: 1 },
+  "023/2025": { nome: "LUCINEIA CARVALHO DE JESUS", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "024/2025": { nome: "BRISVELLY SAMARI CARICO MAITA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO DE MULHERES", membros: "", atendimentos: 1 },
+  "025/2025": { nome: "MATHEUS FERNANDO MARTINEZ DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "NICOLE ISABEL MARTINEZ GARCIA ( MÃE)", atendimentos: 1 },
+  "026/2025": { nome: "FABRICIO DE MORAES FERNANDES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "WILLIAN  SILVA FERNANDES ( PAI)", atendimentos: 1 },
+  "027/2025": { nome: "ANNA LUIZA BANDACHESSI", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "BRUNA JHENIFFER DE ANDRADE MENDONÇA", atendimentos: 1 },
+  "028/2025": { nome: "CELINI GABRIELLY DE ANDRADE MENDONÇA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "BRUNA HENIFFER DE ANDRADE MENDONÇA", atendimentos: 1 },
+  "029/2025": { nome: "JULIA SPLIDER DA CRUZ", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "GRACIELLE DE FATIMA ( MÃE)", atendimentos: 1 },
+  "030/2025": { nome: "CALEBE EMANUEL NICOLE NEGREIROS", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "JULIA SPLINDLER DA CRUZ", atendimentos: 1 },
+  "031/2025": { nome: "LIVIA MARCELA REBUSSI", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "033/2025": { nome: "ADRIEL ALVES ALMEIDA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "034/2025": { nome: "KEMILLY VITÓRIA DORINI JACINTO", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "KAYKY RAFAEL DORINI DO PRADO, LARISSA DORINI ( MÃE)", atendimentos: 1 },
+  "035/2025": { nome: "LAUDEVINO SALLES PIMENTEL", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "036/2025": { nome: "JHOANNA LUIMAR MOLINA AGUILAR", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "037/2025": { nome: "HEVELLYN GARCIA JARDIM", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "LINDAMIRA ( MÃE)", atendimentos: 1 },
+  "038/2025": { nome: "VICTOR CANDIDO DE OLIVEIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO ADOLESCENTE", membros: "", atendimentos: 1 },
+  "039/2025": { nome: "THAINARA LAIS E TAIS LARISSA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "", atendimentos: 1 },
+  "040/2025": { nome: "KAYKI SOUSA MARTINS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "MÃE TAIS ALINE DE SOUZA", atendimentos: 1 },
+  "041/2025": { nome: "LAURA IZABELLY  FIRMINO DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "CALEBE FIRMINO DA SILVA, ANA CLARA FIRMINO DA SILVA, JOÃO PEDRO FIRMINO DA SILVA, TATIANA IZABELLY  FIRMINO DA SILVA ( MÃE)", atendimentos: 1 },
+  "042/2025": { nome: "JOAÕ PEDRO GOMES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "MÃE GEILZA GOMES DA SILVA", atendimentos: 1 },
+  "043/2025": { nome: "MELINDA GREGORIO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "RAFAELA GRACIELE GRAGÓRIO ( MÃE)", atendimentos: 1 },
+  "044/2025": { nome: "VIVIANE FERNNADES DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "046/2025": { nome: "JOSELAYNE AMARAL", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "047/2025": { nome: "TAIS VIANA DE SOUZA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "048/2025": { nome: "DEBORA VITÓRIA MARTINS DE SOUZA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "049/2025": { nome: "ANGELICA APARECIDA BENTO", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "050/2025": { nome: "SILVANA RODRIGUES DA COSTA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "54/2025": { nome: "SAMIRA RAMZY HASSANEIN ALY HASSANEIN", servico: "PAEFI", situacao: "( INSTITUCIONALIZADA CUIBÁ)", membros: "", atendimentos: 1 },
+  "55/2025": { nome: "ANA SOFIA SANCHES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "HELENA BEATRIZ SANCHES DE LIMA, FABIANI CRISTINA SANCHES DE OLIVEIRA ( MÃE)", atendimentos: 1 },
+  "56/2025": { nome: "RAYNEL NUNES DE SOUZA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "SAMUEL NUNES DE SOUZA, LIVIA CRISTINA NUNES PEREIRA", atendimentos: 1 },
+  "58/2025": { nome: "KEURY DE JESUS CORDEIRO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "TATIELE  DE JESUS CORDEIRO ( MÃE)", atendimentos: 1 },
+  "059/2025": { nome: "SOFIA LUCCHETTI DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "GLEICE QUELI LUCHETTI  ( MÃE)", atendimentos: 1 },
+  "061/2025": { nome: "RHAYSSA VITÓRIA DO AMARANTE DOS SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "CLAUDIENE ROQUE DE AMARANTE ( MÃE)", atendimentos: 1 },
+  "063/2025": { nome: "THAIS LARISSA BATISTA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "THAINARA LAIS BATISTA, MARIA DE FATIA NASCIMENTO ( MÃE)", atendimentos: 1 },
+  "064/2025": { nome: "ROSILENE BORGES DA SILVA E FAMILIA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "ANA ALICE BORGES DAPPER ( FILHA), IRIS VITÓRIA BORGES BRUM DE LIMA ( FILHA)", atendimentos: 1 },
+  "065/2025": { nome: "DHAFFINNY MYKAELLY DUARTE MARQUES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "DANIELI  LIA DUARTE ( MÃE)", atendimentos: 1 },
+  "066/2025": { nome: "TATIANE APARECIDA MOREIRA PROVASI", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "URIEL SUZENANDO PROVAS ( FILHO)", atendimentos: 1 },
+  "067/2025": { nome: "ADRIANE TEROLTI", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "069/2025": { nome: "ALLANA MONIKY ARAUJO DE ALMEIDA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "EDILAINE ARAÚJO DA SILVA", atendimentos: 1 },
+  "070/2025": { nome: "YSADORA SANTOS NEVES", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "PATRICIA  MAYARA NEVES, JOSÉ PAMERSON SILVA SANTOS", atendimentos: 1 },
+  "071/2025": { nome: "JULIANA DUARTE ALVES BARBOSA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "LUCIENE MARIA DUARTE", atendimentos: 1 },
+  "072/2025": { nome: "MARIA EDUARDA RAMOS REIS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "JOCEANA DE RAMOS DOS REIS", atendimentos: 1 },
+  "073/2025": { nome: "LUANA KAWANE POLTRONIERI PEREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "SUSANA POLTRONIERE ( MÃE), JÚLIO CESAR PEREIRA SANTOS", atendimentos: 1 },
+  "074/2025": { nome: "ELOISA PINTO BATISTA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "MARA LIMA PINTO ( MÃE)", atendimentos: 1 },
+  "075/2025": { nome: "ANDRY GBARIEL AGUILERA MALAVE", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "MILEIDI MARIA MALAVE ( MÃE)", atendimentos: 1 },
+  "076/2025": { nome: "CAROLAINE  DOS SANTOS FERREIRA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "077/2025": { nome: "CRISTIANE REBOUÇAS NASCIMENTO PASIN", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "GUSTAVO  ( FILHO), AUGUSTO BENICIO ( FILHO)", atendimentos: 1 },
+  "078/2025": { nome: "FRANCIELE CAETANO", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "080/2025": { nome: "DAFINE KAUANE PEREIRA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "GABRIELLY CARLOS GUBANI, FERNANDA CARLOS REVERSE, RESPONSAVÉL TATIANE FÁTIMA CARLOS ( PRIMA)", atendimentos: 1 },
+  "081/2025": { nome: "ORLANDO LUIZ FERREIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "084/2025": { nome: "ANA CAROLINA DA SILVA SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "KARINA DA SILVA", atendimentos: 1 },
+  "085/2025": { nome: "SIDNEIA APARECIDA GOMES BRAGA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "SUELI GOMES BRAGA", atendimentos: 1 },
+  "086/2025": { nome: "EGUIMA SILVA", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "088/2025": { nome: "YURI HENRRIQUE PEREIRA DOS PASSOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "ANA CLAUDIA FERREIRA DOS PASSOS", atendimentos: 1 },
+  "089/2025": { nome: "PEDRO ALVES", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "MARLENE CARDOSO DA SILVA", atendimentos: 1 },
+  "090/2025": { nome: "LUANA SUZELLE DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "MARIA DAS GRAÇAS RODRIGUES DA SILVA", atendimentos: 1 },
+  "95/2025": { nome: "VITÓRIA APARECIDA PORCEBOM DE ALMEIDA", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "LUCIANA APARECIDA PORSEBOM  DE ALMEIDA", atendimentos: 1 },
+  "96/2025": { nome: "SIDNEIA ARAUJO", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "97/2025": { nome: "MARIA NEIZA CAMARGO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "98/2025": { nome: "JOÃO LUIZ NETO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "99/2025": { nome: "ADEMAR DE OLIVEIRA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "100/2025": { nome: "LUIZ CARLOS PRESENTE", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "101/2025": { nome: "JOSÉ GONÇALVES ROCHA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "103/2025": { nome: "CRISTIANO ARAÚJO ASSUNÇAO", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "104/2025": { nome: "RAYNER VITOR DOS SANTOS RODRIGUES", servico: "PAEFI", situacao: "ACOMPANHAMENTO PAEFI ADOLESCENTE", membros: "CHAYANE ( MÃE)", atendimentos: 1 },
+  "105/2025": { nome: "LEILA SILVA JUSTINO", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO PAEF MULHERES", membros: "", atendimentos: 1 },
+  "106/2025": { nome: "JOELMA CRISTINA DE SOUZA", servico: "PAEFI", situacao: "EM ACOMPANHAMENTO DOMICILIAR", membros: "KLEBERSON DE OLIVEIRA", atendimentos: 1 },
+  "001/2026": { nome: "MARIA MACHADO BATISTA", servico: "PAEFI", situacao: "EM ACOMPANHAMENTO DOMICILIAR", membros: "CLAUDEMIR MACHADO DOS SANTOS", atendimentos: 1 },
+  "002/2026": { nome: "DHIENIFFER GABRIELA PEREIRA DA SILVA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "Gleidislaine Debora Pereira da silva ( MÂE)", atendimentos: 1 },
+  "003/2026": { nome: "MARIA JOSÉ DA SILVA SANTOS", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "EDILAINE DA SILVA  SANTOS ( FILHA )", atendimentos: 1 },
+  "004/2026": { nome: "JOÃO DONIZETE FAUSTINONE", servico: "PAEFI", situacao: "ACOMPANHAMENTO", membros: "", atendimentos: 1 },
+  "005/2026": { nome: "JOHANNA LUIMAR MOLINA AGUIAR", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "006/2026": { nome: "NORALDINO FERREIRA DE SENA", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "007/2026": { nome: "LORENNA MARIA SOUZA BARBIERE", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEF CRIANÇAS", membros: "( REGINA DE OLIVEIRA BARBIERE ) ( MÃE)", atendimentos: 1 },
+  "008/2026": { nome: "ADÃO BADU", servico: "PAEFI", situacao: "ACOMPANHAMENTO GRUPO PAEFI IDOSOS", membros: "", atendimentos: 1 },
+  "009/2026": { nome: "DEYSIANNE SUZIAMARY ARAUJÓ TAVARES", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO GRUPO MULHERES", membros: "", atendimentos: 1 },
+  "010/2026": { nome: "ODILETE ALVES DA SILVA VITAL", servico: "Mulher Vítima de Violência", situacao: "ACOMPANHAMENTO  GRUPO MULHERES ( VITIMA DE VIOLÊNC", membros: "", atendimentos: 1 },
+  "011/2026": { nome: "MILTON FERREIRA BARROS", servico: "PAEFI", situacao: "ACOMPANHAMENTO BENEFICIO EVENTUAL", membros: "", atendimentos: 1 }
+};
+
+function buscarFamilia() {
+  const rawNum = document.getElementById('numFamilia').value.trim();
+  const card = document.getElementById('familiaCard');
+  const alerta = document.getElementById('alertaNaoEncontrado');
+  const f = familias[rawNum] || familias[rawNum.padStart(3,'0')];
+  if (f) {
+    document.getElementById('fcNome').textContent = f.nome;
+    document.getElementById('fcProcesso').textContent = f.situacao || '—';
+    document.getElementById('fcServico').textContent = f.servico;
+    document.getElementById('fcTecnico').textContent = '—';
+    document.getElementById('fcEndereco').textContent = f.membros || 'Sem membros cadastrados';
+    document.getElementById('fcTelefone').textContent = f.status || 'ATIVO';
+    document.getElementById('fcNum').textContent = '📋 Família — Nº ' + rawNum;
+    document.getElementById('nomeResp').value = f.nome;
+    document.getElementById('servico').value = f.servico;
+    document.getElementById('numAtend').value = 'Acompanhamento — Família ' + rawNum;
+    card.classList.add('show'); alerta.style.display = 'none';
+  } else {
+    card.classList.remove('show'); alerta.style.display = 'block';
+  }
+}
+
+function limparCard() {
+  document.getElementById('familiaCard').classList.remove('visible');
+  document.getElementById('alertaNaoEncontrado').style.display = 'none';
+}
+
+// Checkbox toggle
+document.querySelectorAll('.check-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const cb = this.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    this.classList.toggle('checked', cb.checked);
+  });
+});
+
+// Cumprimento toggle
+function selectCumpr(el, tipo) {
+  const group = el.closest('.cumpr-options');
+  group.querySelectorAll('.cumpr-opt').forEach(o => o.classList.remove('sim','parcial','nao'));
+  el.classList.add(tipo);
+}
+
+// Add cumprimento
+let cumprCount = 2;
+function addCumpr() {
+  cumprCount++;
+  const c = document.getElementById('cumprContainer');
+  const div = document.createElement('div');
+  div.className = 'cumpr-item';
+  div.innerHTML = `
+    <div class="cumpr-label">${cumprCount}. Ação / compromisso combinado</div>
+    <input type="text" placeholder="Descreva a ação que foi combinada..." style="margin-bottom:10px;width:100%;padding:10px;border:1.5px solid #cdd8e3;border-radius:8px;font-family:inherit;font-size:0.9rem;">
+    <div class="cumpr-options">
+      <label class="cumpr-opt" onclick="selectCumpr(this,'sim')"><input type="radio" name="cumpr${cumprCount}">✅ Cumprido</label>
+      <label class="cumpr-opt" onclick="selectCumpr(this,'parcial')"><input type="radio" name="cumpr${cumprCount}">⚠️ Parcialmente</label>
+      <label class="cumpr-opt" onclick="selectCumpr(this,'nao')"><input type="radio" name="cumpr${cumprCount}">❌ Não cumprido</label>
+    </div>
+    <input type="text" placeholder="Observação..." style="margin-top:8px;width:100%;padding:10px;border:1.5px solid #cdd8e3;border-radius:8px;font-family:inherit;font-size:0.9rem;">
+  `;
+  c.appendChild(div);
+}
+
+// Add encaminhamento
+let encamCount = 1;
+function addEncam() {
+  encamCount++;
+  const c = document.getElementById('encamContainer');
+  const div = document.createElement('div');
+  div.className = 'encam-entry';
+  div.innerHTML = `
+    <div class="encam-num">Encaminhamento ${encamCount}</div>
+    <div class="row">
+      <div class="field w2"><label>Serviço / Equipamento</label><input type="text" placeholder="Ex: UBS, CAPS, CRAS..."></div>
+      <div class="field"><label>Data</label><input type="date"></div>
+    </div>
+    <div class="field"><label>Objetivo</label><input type="text" placeholder="Objetivo do encaminhamento..."></div>
+    <div class="field"><label>Resultado / Retorno</label><input type="text" placeholder="Resultado obtido..."></div>
+  `;
+  c.appendChild(div);
+}
+
+// Build resumo
+function buildResumo() {
+  const v = (id) => { const el = document.getElementById(id); return el ? (el.value || '—') : '—'; };
+  const checks = (groupId) => {
+    const items = document.querySelectorAll('#' + groupId + ' .check-item.checked');
+    return items.length ? Array.from(items).map(i => i.textContent.trim()).join(', ') : '—';
+  };
+  const radio = (name) => { const el = document.querySelector('input[name="'+name+'"]:checked'); return el ? el.value : '—'; };
+
+  document.getElementById('resumo').innerHTML = `
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📁 Identificação</div>
+      Família: <b>${v('numFamilia')}</b> | Responsável: <b>${v('nomeResp')}</b><br>
+      Processo: <b>${v('processo')}</b> | Serviço: <b>${v('servico')}</b><br>
+      Técnico(a): <b>${v('tecnico')}</b> | Data: <b>${v('dataAtend')}</b> | <b>${v('numAtend')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">✅ Presença e Situação</div>
+      Presença: <b>${checks('presencaGroup')}</b><br>
+      Receptividade: <b>${v('receptividade')}</b><br>
+      Risco: <b>${v('risco')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📈 Evolução dos Parâmetros</div>
+      Vínculos: <b>${radio('p1')}</b> | Comunicação: <b>${radio('p2')}</b> | Parentalidade: <b>${radio('p3')}</b><br>
+      Cessação violência: <b>${radio('p5')}</b> | Segurança: <b>${radio('p6')}</b><br>
+      Acesso a benefícios: <b>${radio('p8')}</b> | Saúde: <b>${radio('p10')}</b> | Autonomia: <b>${radio('p12')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">🎯 Próximos Passos</div>
+      Parecer: <b>${v('parecer')}</b><br>
+      Retorno previsto: <b>${v('dataRetorno')}</b> — <b>${v('tipoRetorno')}</b>
+    </div>
+  `;
+}
+
+function submitForm() {
+  const assin = document.getElementById('assinatura').value.trim();
+  if (!assin) { alert('Por favor, assine digitalmente com seu nome para finalizar.'); return; }
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = document.getElementById('sec' + i);
+    if (s) s.style.display = 'none';
+  }
+  document.getElementById('successMsg').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CREAS — Atendimento Inicial / Visita Domiciliar</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a1a; font-size: 16px; }
+
+.header {
+  background: linear-gradient(135deg, #1F4E79, #2E75B6);
+  color: white; padding: 20px; text-align: center;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.header h1 { font-size: 1.2rem; font-weight: 700; }
+.header p  { font-size: 0.82rem; opacity: 0.85; margin-top: 3px; }
+
+.progress-bar { background: #d6e4f0; height: 5px; position: sticky; top: 68px; z-index: 99; }
+.progress-fill { height: 100%; background: #2E75B6; width: 0%; transition: width 0.4s; }
+.progress-label { text-align: center; font-size: 0.75rem; color: #2E75B6; padding: 3px 0; font-weight: 600; }
+
+.container { max-width: 780px; margin: 0 auto; padding: 16px 14px 60px; }
+.steps { display: flex; gap: 5px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+.step-dot { width: 9px; height: 9px; border-radius: 50%; background: #cdd8e3; transition: all 0.3s; cursor: pointer; }
+.step-dot.active { background: #1F4E79; transform: scale(1.35); }
+.step-dot.done { background: #2E75B6; }
+
+.section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.section-header { background: #1F4E79; color: white; padding: 13px 18px; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.section-body { padding: 18px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.85rem; font-weight: 600; color: #1F4E79; margin-bottom: 5px; }
+.req { color: #c0392b; }
+
+input[type=text], input[type=date], input[type=tel], select, textarea {
+  width: 100%; padding: 11px 13px; border: 1.5px solid #cdd8e3;
+  border-radius: 8px; font-size: 0.92rem; font-family: inherit;
+  background: #fafcfe; color: #1a1a1a;
+  transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: #2E75B6;
+  box-shadow: 0 0 0 3px rgba(46,117,182,0.1); background: white;
+}
+textarea { resize: vertical; min-height: 85px; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+.row .field { flex: 1; min-width: 180px; }
+.row .field.w2 { flex: 2; }
+.row .field.w3 { flex: 3; }
+
+.check-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.check-item {
+  display: flex; align-items: center; gap: 7px;
+  background: #f0f4f8; border: 1.5px solid #cdd8e3;
+  border-radius: 8px; padding: 9px 13px; cursor: pointer;
+  font-size: 0.85rem; user-select: none; transition: all 0.2s;
+}
+.check-item:hover { border-color: #2E75B6; background: #e8f0f8; }
+.check-item input { display: none; }
+.check-box { width: 18px; height: 18px; border: 2px solid #aab8c8; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; color: white; transition: all 0.2s; }
+.check-item.checked { border-color: #1F4E79; background: #d6e4f0; }
+.check-item.checked .check-box { background: #1F4E79; border-color: #1F4E79; }
+
+.radio-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.radio-item {
+  display: flex; align-items: center; gap: 7px;
+  background: #f0f4f8; border: 1.5px solid #cdd8e3;
+  border-radius: 8px; padding: 9px 13px; cursor: pointer;
+  font-size: 0.85rem; user-select: none; transition: all 0.2s;
+}
+.radio-item:hover { border-color: #2E75B6; background: #e8f0f8; }
+.radio-item input { display: none; }
+.opt-box { width: 18px; height: 18px; border: 2px solid #aab8c8; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; color: white; transition: all 0.2s; }
+.radio-item.selected { border-color: #1F4E79; background: #d6e4f0; }
+.radio-item.selected .opt-box { background: #1F4E79; border-color: #1F4E79; }
+
+.member-hdr { display: grid; grid-template-columns: 2.5fr 1.2fr 0.8fr 1.5fr; gap: 6px; margin-bottom: 4px; }
+.member-hdr span { font-size: 0.72rem; font-weight: 700; color: #1F4E79; text-transform: uppercase; }
+.member-row { display: grid; grid-template-columns: 2.5fr 1.2fr 0.8fr 1.5fr; gap: 6px; margin-bottom: 6px; }
+.member-row input { font-size: 0.83rem; padding: 8px 10px; }
+
+/* ATENDIMENTOS SUBSEQUENTES */
+.atend-entry {
+  border: 2px solid #d6e4f0; border-radius: 10px;
+  padding: 16px; margin-bottom: 14px; background: #fafcfe;
+  position: relative;
+}
+.atend-num {
+  background: #1F4E79; color: white;
+  font-size: 0.8rem; font-weight: 700;
+  padding: 4px 12px; border-radius: 20px;
+  display: inline-block; margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+.atend-entry .del-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: #fee; border: 1.5px solid #f5c6cb;
+  color: #c0392b; border-radius: 6px; padding: 4px 10px;
+  font-size: 0.78rem; cursor: pointer; font-family: inherit;
+}
+.atend-entry .del-btn:hover { background: #fcc; }
+
+.sub-hdr { background: #d6e4f0; color: #1F4E79; font-weight: 700; font-size: 0.88rem; padding: 9px 13px; border-radius: 6px; margin-bottom: 14px; }
+.divider { border: none; border-top: 1.5px solid #edf1f5; margin: 18px 0; }
+.info-box { background: #e8f0f8; border: 1.5px solid #2E75B6; border-radius: 8px; padding: 10px 14px; font-size: 0.83rem; color: #1F4E79; margin-bottom: 14px; }
+
+/* PROCESSO/ANEXO */
+.processo-box {
+  background: #f0f7ff; border: 2px dashed #2E75B6;
+  border-radius: 10px; padding: 16px; margin-bottom: 16px;
+}
+.processo-box label { color: #1F4E79; font-weight: 700; font-size: 0.88rem; display: block; margin-bottom: 8px; }
+
+.nav { display: flex; gap: 10px; margin-top: 20px; }
+.btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.btn:active { transform: scale(0.98); }
+.btn-prev { background: #e8eef4; color: #1F4E79; }
+.btn-prev:hover { background: #d6e4f0; }
+.btn-next { background: #1F4E79; color: white; }
+.btn-next:hover { background: #163a5c; }
+.btn-submit { background: #1e5c2e; color: white; }
+.btn-submit:hover { background: #155124; }
+.btn-add { background: #e8f0f8; border: 1.5px dashed #2E75B6; color: #1F4E79; padding: 12px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; font-family: inherit; }
+.btn-add:hover { background: #d6e4f0; }
+
+/* ENVIANDO */
+.sending-overlay { display: none; position: fixed; inset: 0; background: rgba(31,78,121,0.85); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.sending-overlay.show { display: flex; }
+.sending-overlay .spin { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sending-overlay p { color: white; font-size: 1.1rem; font-weight: 600; }
+
+.success { display: none; text-align: center; padding: 50px 20px; background: white; border-radius: 12px; }
+.success .big-icon { font-size: 3.5rem; margin-bottom: 14px; }
+.success h2 { color: #1e8449; font-size: 1.4rem; margin-bottom: 8px; }
+.success p { color: #555; margin-bottom: 22px; font-size: 0.9rem; }
+.btn-print { background: #1F4E79; color: white; padding: 14px 30px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin: 6px; }
+.btn-novo { background: #e8eef4; color: #1F4E79; padding: 14px 30px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin: 6px; }
+
+.resumo-bloco { background: #f7fafc; border: 1.5px solid #dde4eb; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.8; }
+.resumo-titulo { color: #1F4E79; font-weight: 700; font-size: 0.88rem; margin-bottom: 5px; }
+
+@media (max-width: 480px) {
+  .row .field { min-width: 100%; }
+  .member-hdr, .member-row { grid-template-columns: 2fr 1fr 0.7fr; }
+  .member-hdr span:last-child, .member-row input:last-child { display: none; }
+}
+@media print {
+  .header, .progress-bar, .progress-label, .steps, .nav, .btn-print, .btn-novo, .del-btn { display: none !important; }
+  .section { display: block !important; box-shadow: none; page-break-inside: avoid; }
+  body { background: white; font-size: 11px; }
+  .atend-entry { border: 1px solid #ccc; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="sending-overlay" id="sendingOverlay">
+  <div class="spin"></div>
+  <p>Enviando para o Google Sheets...</p>
+</div>
+
+<div class="header">
+  <h1>📋 Prontuário de Atendimento Inicial / Visita</h1>
+  <p>CREAS — Colíder/MT</p>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-label" id="progressLabel">Seção 1 de 6</div>
+
+<div class="container">
+  <div class="steps" id="stepDots"></div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 1. IDENTIFICAÇÃO E PROCESSO               -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section active" id="sec1">
+    <div class="section-header">📁 1. Identificação do Caso</div>
+    <div class="section-body">
+
+      <div class="processo-box">
+        <label>📎 Processo / Documento de Referência</label>
+        <div class="row">
+          <div class="field w2">
+            <input type="text" id="numProcesso" placeholder="Nº do processo, ofício, guia judicial...">
+          </div>
+          <div class="field">
+            <input type="text" id="origemProcesso" placeholder="Origem: Vara, CT, MPMT...">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <input type="text" id="localArquivo" placeholder="Onde está salvo: pasta, drive, sistema... (ex: Drive/CREAS/2026/Famílias/...)">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Data do Atendimento <span class="req">*</span></label>
+          <input type="date" id="dataAtend">
+        </div>
+        <div class="field">
+          <label>Nº da Família / Prontuário <span style="color:#2e8b57;font-weight:400;font-size:0.78rem;">(se já existir)</span></label>
+          <input type="text" id="numFamilia" placeholder="Deixe em branco se for novo caso...">
+        </div>
+      </div>
+      <div style="background:#e8f5e9;border:1.5px solid #27ae60;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:#1e5c2e;">
+        ℹ️ <b>Primeiro atendimento?</b> O número da família ainda não existe. Deixe em branco e preencha o campo abaixo após criar o prontuário no sistema.
+      </div>
+      <div class="field">
+        <label>Nº da Família gerado após o atendimento <span style="color:#888;font-weight:400;font-size:0.78rem;">(preencha depois se necessário)</span></label>
+        <input type="text" id="numFamiliaPos" placeholder="Ex: 045 — preencha após registrar no sistema...">
+      </div>
+
+      <div class="field">
+        <label>Tipo de Atendimento <span class="req">*</span></label>
+        <div class="radio-group" id="tipoAtend">
+          <label class="radio-item"><input type="radio" name="tipo" value="Visita domiciliar"><span class="opt-box">●</span>🏠 Visita domiciliar</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Atendimento no equipamento"><span class="opt-box">●</span>🏢 Atendimento no equipamento</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Demanda Única"><span class="opt-box">●</span>⚡ Demanda Única</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Atendimento externo"><span class="opt-box">●</span>🔗 Atendimento externo</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Benefício Eventual — Passagem"><span class="opt-box">●</span>🚌 Benef. Eventual — Passagem</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Benefício Eventual — Marmita"><span class="opt-box">●</span>🍱 Benef. Eventual — Marmita</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Benefício Eventual — Hospedagem"><span class="opt-box">●</span>🏨 Benef. Eventual — Hospedagem</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Benefício Eventual — Gás"><span class="opt-box">●</span>🔥 Benef. Eventual — Gás</label>
+          <label class="radio-item"><input type="radio" name="tipo" value="Benefício Eventual — Despesas"><span class="opt-box">●</span>💰 Benef. Eventual — Despesas</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Serviço <span class="req">*</span></label>
+        <select id="servico">
+          <option value="">Selecione...</option>
+          <option>PAEFI</option>
+          <option>MSE — PSC</option>
+          <option>MSE — LA</option>
+          <option>Mulher Vítima de Violência</option>
+          <option>Demanda Espontânea</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field w2">
+          <label>Técnico(a) Responsável <span class="req">*</span></label>
+          <input type="text" id="tecnico" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Órgão Requerente</label>
+          <input type="text" id="orgaoReq" placeholder="2ª Vara, CT, MPMT...">
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav"><div></div><button class="btn btn-next" onclick="goTo(2)">Próximo →</button></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 2. IDENTIFICAÇÃO DA VÍTIMA / FAMÍLIA      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section" id="sec2">
+    <div class="section-header">👤 2. Identificação da Vítima / Família</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Nome Completo <span class="req">*</span></label>
+        <input type="text" id="nomeVitima" placeholder="Nome completo">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Data de Nascimento</label>
+          <input type="date" id="nascVitima">
+        </div>
+        <div class="field">
+          <label>CPF</label>
+          <input type="text" id="cpfVitima" placeholder="000.000.000-00">
+        </div>
+        <div class="field">
+          <label>RG</label>
+          <input type="text" id="rgVitima" placeholder="">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Cartão SUS</label>
+          <input type="text" id="susVitima" placeholder="">
+        </div>
+        <div class="field">
+          <label>NIS</label>
+          <input type="text" id="nisVitima" placeholder="">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Bolsa Família</label>
+          <select id="bolsaFam">
+            <option value="">Selecione...</option>
+            <option>Sim</option>
+            <option>Não</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Benefício INSS / BPC</label>
+          <select id="bpc">
+            <option value="">Selecione...</option>
+            <option>Sim</option>
+            <option>Não</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Renda Familiar</label>
+          <input type="text" id="renda" placeholder="Ex: R$ 1.412,00">
+        </div>
+      </div>
+      <div class="field">
+        <label>Genitores / Responsáveis</label>
+        <input type="text" id="genitores" placeholder="Nome do pai e/ou mãe / responsável legal">
+      </div>
+      <div class="field">
+        <label>Endereço</label>
+        <input type="text" id="endereco" placeholder="Rua, número, bairro, CEP">
+      </div>
+      <div class="field">
+        <label>Telefone / Contato</label>
+        <input type="tel" id="telefone" placeholder="(66) 99999-0000">
+      </div>
+
+      <hr class="divider">
+      <div class="sub-hdr">Composição Familiar / Outros Familiares</div>
+      <div class="member-hdr">
+        <span>Nome</span><span>Parentesco</span><span>Idade</span><span>Escolaridade</span>
+      </div>
+      <div id="membrosContainer">
+        <div class="member-row">
+          <input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade">
+        </div>
+        <div class="member-row">
+          <input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade">
+        </div>
+        <div class="member-row">
+          <input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade">
+        </div>
+      </div>
+      <button class="btn-add" onclick="addMembro()">+ Adicionar membro</button>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(1)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(3)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 3. TIPO DE VIOLÊNCIA E SITUAÇÃO           -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section" id="sec3">
+    <div class="section-header">⚠️ 3. Tipo de Violência / Situação</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Tipo de Violência / Demanda</label>
+        <div class="check-group" id="violacaoGroup">
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Violência Física</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Violência Psicológica</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Violência Sexual</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Violência Doméstica</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Negligência / Abandono</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Trabalho Infantil</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Abuso Sexual</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Uso de Drogas</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Exploração Sexual</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Situação de Rua</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>MSE — PSC / LA</label>
+          <label class="check-item"><input type="checkbox"><span class="check-box">✓</span>Maus Tratos</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Outro / Complemento</label>
+        <input type="text" id="violacaoOutro" placeholder="Descreva se necessário">
+      </div>
+      <div class="field">
+        <label>Há situação de risco imediato?</label>
+        <div class="radio-group" id="risco">
+          <label class="radio-item"><input type="radio" name="risco" value="Não — situação estável"><span class="opt-box">●</span>Não — estável</label>
+          <label class="radio-item"><input type="radio" name="risco" value="Sim — risco leve"><span class="opt-box">●</span>Sim — risco leve</label>
+          <label class="radio-item"><input type="radio" name="risco" value="Sim — risco moderado"><span class="opt-box">●</span>Sim — risco moderado</label>
+          <label class="radio-item"><input type="radio" name="risco" value="Sim — risco grave"><span class="opt-box">●</span>Sim — risco grave ⚠️</label>
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(2)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(4)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 4. PRIMEIRO ATENDIMENTO                   -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section" id="sec4">
+    <div class="section-header">📝 4. Registro do Primeiro Atendimento</div>
+    <div class="section-body">
+      <div class="field">
+        <label>Contextualização — Situação familiar, escolarização, saúde, rede <span class="req">*</span></label>
+        <textarea id="contexto" rows="6" placeholder="Descreva a situação encontrada: contexto familiar, escolarização das crianças/adolescentes, condições de saúde, acesso à rede de serviços, encaminhamentos realizados..."></textarea>
+      </div>
+      <div class="field">
+        <label>Condições da Moradia</label>
+        <select id="moradia">
+          <option value="">Selecione...</option>
+          <option>Adequada</option>
+          <option>Parcialmente adequada</option>
+          <option>Precária</option>
+          <option>Situação de rua</option>
+          <option>Não verificado presencialmente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Receptividade da família</label>
+        <div class="radio-group" id="receptividade">
+          <label class="radio-item"><input type="radio" name="recep" value="Muito receptiva"><span class="opt-box">●</span>Muito receptiva</label>
+          <label class="radio-item"><input type="radio" name="recep" value="Receptiva"><span class="opt-box">●</span>Receptiva</label>
+          <label class="radio-item"><input type="radio" name="recep" value="Pouco receptiva"><span class="opt-box">●</span>Pouco receptiva</label>
+          <label class="radio-item"><input type="radio" name="recep" value="Não receptiva"><span class="opt-box">●</span>Não receptiva</label>
+          <label class="radio-item"><input type="radio" name="recep" value="Ausente"><span class="opt-box">●</span>Ausente</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Encaminhamentos realizados</label>
+        <textarea id="encaminhamentos" rows="3" placeholder="Descreva os encaminhamentos realizados: serviços, órgãos acionados (CT, MP, Delegacia, UBS, CRAS, escola...)"></textarea>
+      </div>
+      <div class="field">
+        <label>A situação demandará elaboração de PAF para acompanhamento familiar?</label>
+        <div class="radio-group" id="paf">
+          <label class="radio-item"><input type="radio" name="paf" value="Sim"><span class="opt-box">●</span>Sim</label>
+          <label class="radio-item"><input type="radio" name="paf" value="Não"><span class="opt-box">●</span>Não</label>
+          <label class="radio-item"><input type="radio" name="paf" value="Em avaliação"><span class="opt-box">●</span>Em avaliação</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Data inicial agendada com o responsável (se PAF)</label>
+        <input type="date" id="dataPAF">
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(3)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(5)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 5. ATENDIMENTOS SUBSEQUENTES              -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section" id="sec5">
+    <div class="section-header">🔄 5. Atendimentos Subsequentes</div>
+    <div class="section-body">
+      <div class="info-box">
+        ℹ️ Use esta seção para registrar atendimentos posteriores ao inicial — casos que requerem mais de um contato mas não geram acompanhamento formal (PAF/PAEFI).
+      </div>
+      <div id="atendContainer">
+        <!-- Atendimentos adicionados dinamicamente -->
+      </div>
+      <button class="btn-add" onclick="addAtend()">➕ Adicionar atendimento subsequente</button>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(4)">← Anterior</button>
+        <button class="btn btn-next" onclick="goTo(6)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 6. REVISÃO E FINALIZAÇÃO                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section" id="sec6">
+    <div class="section-header">✅ 6. Revisão e Finalização</div>
+    <div class="section-body">
+      <p style="color:#555;font-size:0.88rem;margin-bottom:16px;">Revise antes de finalizar.</p>
+      <div id="resumo"></div>
+      <hr class="divider" style="margin:16px 0">
+      <div class="field">
+        <label>Assinatura digital — Técnico(a) <span class="req">*</span></label>
+        <input type="text" id="assinatura" placeholder="Digite seu nome completo">
+      </div>
+      <div class="field">
+        <label>CRESS / Registro profissional</label>
+        <input type="text" id="cress" placeholder="Ex: CRESS 23/MT — 00000">
+      </div>
+
+      <!-- CONFIGURAÇÃO GOOGLE SHEETS -->
+      <div style="background:#fff8e1;border:1.5px solid #ffc107;border-radius:8px;padding:14px;margin-top:16px;">
+        <p style="font-size:0.82rem;font-weight:700;color:#856404;margin-bottom:8px;">⚙️ Configuração Google Sheets (faça uma vez só)</p>
+        <div class="field" style="margin-bottom:0">
+          <label style="color:#856404;font-size:0.82rem;">URL do Google Apps Script:</label>
+          <input type="text" id="scriptUrl" placeholder="Cole aqui a URL do seu Apps Script..." style="border-color:#ffc107;" value="https://script.google.com/macros/s/AKfycbx8LNFTuIXVV7QUFQUySJjfKxsspIIdL-FvldRg2XQJRTCZ7CaY9-CZYTqFfoYoTRnm/exec">
+        </div>
+        <p style="font-size:0.75rem;color:#856404;margin-top:6px;">Depois de configurar, o botão Finalizar enviará os dados automaticamente para o Sheets.</p>
+      </div>
+    </div>
+    <div class="section-body" style="padding-top:0">
+      <div class="nav">
+        <button class="btn btn-prev" onclick="goTo(5)">← Anterior</button>
+        <button class="btn btn-submit" onclick="submitForm()">✅ Finalizar e Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success" id="successMsg">
+    <div class="big-icon">🎉</div>
+    <h2>Prontuário Registrado!</h2>
+    <p id="successText">Atendimento registrado com sucesso.</p>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button class="btn-novo" onclick="location.reload()">📋 Novo Atendimento</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 6;
+let current = 1;
+let atendCount = 0;
+
+// Step dots
+const dotsEl = document.getElementById('stepDots');
+for (let i = 1; i <= TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'step-dot' + (i === 1 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  document.getElementById('sec' + current).classList.remove('active');
+  current = n;
+  const s = document.getElementById('sec' + n);
+  if (s) { s.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  updateProgress();
+  if (n === 6) buildResumo();
+}
+
+function updateProgress() {
+  document.getElementById('progressFill').style.width = ((current-1)/(TOTAL-1)*100) + '%';
+  document.getElementById('progressLabel').textContent = 'Seção ' + current + ' de ' + TOTAL;
+  document.querySelectorAll('.step-dot').forEach((d,i) => {
+    d.classList.remove('active','done');
+    if (i+1 === current) d.classList.add('active');
+    else if (i+1 < current) d.classList.add('done');
+  });
+}
+
+// Radio
+document.querySelectorAll('.radio-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const rb = this.querySelector('input[type=radio]');
+    document.querySelectorAll(`input[name="${rb.name}"]`).forEach(r => r.closest('.radio-item').classList.remove('selected'));
+    rb.checked = true;
+    this.classList.add('selected');
+  });
+});
+
+// Checkbox
+document.querySelectorAll('.check-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const cb = this.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    this.classList.toggle('checked', cb.checked);
+  });
+});
+
+function addMembro() {
+  const c = document.getElementById('membrosContainer');
+  const r = document.createElement('div');
+  r.className = 'member-row';
+  r.innerHTML = '<input type="text" placeholder="Nome"><input type="text" placeholder="Parentesco"><input type="text" placeholder="Idade"><input type="text" placeholder="Escolaridade">';
+  c.appendChild(r);
+}
+
+function addAtend() {
+  atendCount++;
+  const c = document.getElementById('atendContainer');
+  const div = document.createElement('div');
+  div.className = 'atend-entry';
+  div.id = 'atend_' + atendCount;
+  div.innerHTML = `
+    <div class="atend-num">📝 ${atendCount}º Atendimento Subsequente</div>
+    <button class="del-btn" onclick="delAtend('atend_${atendCount}')">✕ Remover</button>
+    <div class="row">
+      <div class="field">
+        <label>Data</label>
+        <input type="date">
+      </div>
+      <div class="field">
+        <label>Técnico(a)</label>
+        <input type="text" placeholder="Nome do técnico">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select>
+          <option value="">Selecione...</option>
+          <option>Visita domiciliar</option>
+          <option>Atendimento no equipamento</option>
+          <option>Contato telefônico</option>
+          <option>Atendimento externo</option>
+          <option>Audiência</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Descrição / Registro do atendimento</label>
+      <textarea rows="4" placeholder="Descreva o que foi abordado, observado, situação encontrada..."></textarea>
+    </div>
+    <div class="field">
+      <label>Encaminhamentos realizados</label>
+      <input type="text" placeholder="Serviços acionados, órgãos contactados...">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Próximo passo / retorno previsto</label>
+      <input type="text" placeholder="Ex: Visita domiciliar em 15 dias, aguardar retorno da escola...">
+    </div>
+  `;
+  c.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function delAtend(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+const v = (id) => { const e = document.getElementById(id); return e ? (e.value || '—') : '—'; };
+const radio = (name) => { const e = document.querySelector(`input[name="${name}"]:checked`); return e ? e.value : '—'; };
+const checks = (gid) => {
+  const items = document.querySelectorAll('#' + gid + ' .check-item.checked');
+  return items.length ? Array.from(items).map(i => i.textContent.trim()).join(', ') : '—';
+};
+
+function buildResumo() {
+  const atends = document.querySelectorAll('.atend-entry').length;
+  document.getElementById('resumo').innerHTML = `
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📁 Identificação</div>
+      Processo: <b>${v('numProcesso')}</b> | Origem: <b>${v('origemProcesso')}</b><br>
+      Local arquivo: <b>${v('localArquivo')}</b><br>
+      Data: <b>${v('dataAtend')}</b> | Nº Família: <b>${v('numFamilia')}</b><br>
+      Tipo: <b>${radio('tipo')}</b> | Serviço: <b>${v('servico')}</b><br>
+      Técnico(a): <b>${v('tecnico')}</b> | Órgão: <b>${v('orgaoReq')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">👤 Vítima / Família</div>
+      Nome: <b>${v('nomeVitima')}</b> | Tel: <b>${v('telefone')}</b><br>
+      Endereço: <b>${v('endereco')}</b><br>
+      Renda: <b>${v('renda')}</b> | Bolsa Família: <b>${v('bolsaFam')}</b> | BPC: <b>${v('bpc')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">⚠️ Situação</div>
+      Violações: <b>${checks('violacaoGroup')}</b><br>
+      Risco: <b>${radio('risco')}</b> | Moradia: <b>${v('moradia')}</b><br>
+      Receptividade: <b>${radio('recep')}</b>
+    </div>
+    <div class="resumo-bloco">
+      <div class="resumo-titulo">📝 Atendimentos</div>
+      Demandará PAF: <b>${radio('paf')}</b>${v('dataPAF') !== '—' ? ' | Data PAF: <b>'+v('dataPAF')+'</b>' : ''}<br>
+      Atendimentos subsequentes registrados: <b>${atends}</b>
+    </div>`;
+}
+
+async function submitForm() {
+  if (!document.getElementById('assinatura').value.trim()) {
+    alert('Por favor, assine com seu nome para finalizar.');
+    return;
+  }
+
+  const scriptUrl = document.getElementById('scriptUrl').value.trim();
+
+  // Coletar dados
+  const atendimentos = [];
+  document.querySelectorAll('.atend-entry').forEach((el, idx) => {
+    const inputs = el.querySelectorAll('input, select, textarea');
+    atendimentos.push({
+      numero: idx + 1,
+      data: inputs[0]?.value || '',
+      tecnico: inputs[1]?.value || '',
+      tipo: inputs[2]?.value || '',
+      descricao: inputs[3]?.value || '',
+      encaminhamento: inputs[4]?.value || '',
+      proximo: inputs[5]?.value || '',
+    });
+  });
+
+  const dados = {
+    formulario: 'Atendimento Inicial',
+    dataAtend: v('dataAtend'),
+    numFamilia: v('numFamilia'),
+    numProcesso: v('numProcesso'),
+    origemProcesso: v('origemProcesso'),
+    localArquivo: v('localArquivo'),
+    tipoAtend: radio('tipo'),
+    servico: v('servico'),
+    tecnico: v('tecnico'),
+    orgaoReq: v('orgaoReq'),
+    nomeVitima: v('nomeVitima'),
+    nascVitima: v('nascVitima'),
+    cpf: v('cpfVitima'),
+    rg: v('rgVitima'),
+    sus: v('susVitima'),
+    nis: v('nisVitima'),
+    renda: v('renda'),
+    bolsaFam: v('bolsaFam'),
+    bpc: v('bpc'),
+    genitores: v('genitores'),
+    endereco: v('endereco'),
+    telefone: v('telefone'),
+    violacoes: checks('violacaoGroup'),
+    violacaoOutro: v('violacaoOutro'),
+    risco: radio('risco'),
+    contexto: v('contexto'),
+    moradia: v('moradia'),
+    receptividade: radio('recep'),
+    encaminhamentos: v('encaminhamentos'),
+    paf: radio('paf'),
+    dataPAF: v('dataPAF'),
+    atendimentos: JSON.stringify(atendimentos),
+    assinatura: v('assinatura'),
+    cress: v('cress'),
+    dataEnvio: new Date().toLocaleString('pt-BR'),
+  };
+
+  if (scriptUrl) {
+    document.getElementById('sendingOverlay').classList.add('show');
+    try {
+      await fetch(scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados),
+      });
+      document.getElementById('successText').textContent = 'Dados enviados para o Google Sheets com sucesso!';
+    } catch (e) {
+      document.getElementById('successText').textContent = 'Prontuário salvo localmente. Verifique a URL do Apps Script.';
+    }
+    document.getElementById('sendingOverlay').classList.remove('show');
+  }
+
+  // Mostrar sucesso
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = document.getElementById('sec' + i);
+    if (s) s.style.display = 'none';
+  }
+  document.getElementById('successMsg').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateProgress();
+</script>
+</body>
+</html>
